@@ -1,5 +1,7 @@
 #include "StdAfx.h"
 #include "TrDB.h"
+#include "common.h"
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -19,28 +21,7 @@ TrDB::~TrDB(void)
 
 void TrDB::createFromFile(std::string filename)
 {
-	ifstream fs(filename.c_str());
-	string line;
-	
-	int index = 0;
-	while(std::getline(fs,line)){
-		
-		stringstream ss(line);
-		string s;	
-		ss>>s;
-
-		Transaction t(index);
-		t.label = ::atoi(s.c_str());
-		while(ss>>s)
-		{
-			Item item = ::atoi(s.substr(0,s.find_first_of(':')).c_str());
-			t.items.insert(item);
-		}
-		index++;
-		//减少判断次数，所以重载没有修改
-		m_transactionSet.push_back(t);
-	}
-	fs.close();
+	createFromFile(filename,-1);
 }
 
 void TrDB::createFromFile(std::string filename,int maxLength)
@@ -57,17 +38,29 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 		string s;	
 		ss>>s;
 
+		if (maxLength >0 && index >maxLength) //如果已经到达最大的行数，返回
+			break;
+
 		Transaction t(index);
 		t.label = ::atoi(s.c_str());
 		while(ss>>s)
 		{
 			Item item = ::atoi(s.substr(0,s.find_first_of(':')).c_str());
 			t.items.insert(item);
+
+			//创建头表
+			ItemMap::iterator iterf = m_itemTable.find(item);
+			if (iterf == m_itemTable.end()) //没有之前的
+			{
+				ItemList firstList;
+				firstList.push_back(index);
+				m_itemTable.insert(::make_pair(item,firstList));
+			}
+			else
+				iterf->second.push_back(index);
+			
 		}
 		index++;
-
-		if (maxLength >0 && index >maxLength)
-			break;
 		m_transactionSet.push_back(t);
 	}
 	fs.close();
@@ -87,19 +80,26 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 	this->m_prefix.insert(parent.m_prefix.begin(),parent.m_prefix.end());
 	this->m_prefix.insert(prefix.begin(),prefix.end());
 
-	const TransactionSet& transactions = parent.getTransaction();
-	for(TransactionSet::const_iterator iter = transactions.begin();
-		iter!=transactions.end();++iter)
+	int nNewPrefix = prefix.size();
+	if (nNewPrefix >1 || nNewPrefix == 0)
 	{
-		ItemSet temp;
-		::set_difference(m_prefix.begin(),
-			m_prefix.end(),
-			iter->items.begin(),
-			iter->items.end(),
-			std::insert_iterator<ItemSet>(temp, temp.begin() ));
-
-		if (temp.empty()) //事务包含新的前缀，则插入到投影数据库
-			m_transactionSet.push_back(*iter);
+		const TransactionSet& transactions = parent.getTransaction();
+		for(TransactionSet::const_iterator iter = transactions.begin();
+			iter!=transactions.end();++iter)
+		{
+			if (set_contain(m_prefix,iter->items)) //事务包含新的前缀，则插入到投影数据库
+				m_transactionSet.push_back(*iter);
+		}
+	}
+	else if (nNewPrefix == 1) //如果是添加一个新的前缀，可以利用已有的头表索引
+	{
+		ItemMap::const_iterator iter = parent.m_itemTable.find(*prefix.begin());
+		for(ItemList::const_iterator iter2 = iter->second.begin();
+			iter2!=iter->second.end();
+			++iter2)
+		{
+			m_transactionSet.push_back(parent.m_transactionSet[*iter2]);
+		}
 	}
 
 	//计算支持度
@@ -127,7 +127,7 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 		if (iter->second < nMinSupport)
 			unsupported.insert(iter->first);
 	}
-	unsupported.insert(m_prefix.begin(),m_prefix.end());
+	unsupported.insert(m_prefix.begin(),m_prefix.end()); //前缀也要去除
 
 	//去除不满足支持度的项
 	if(!unsupported.empty())

@@ -68,4 +68,9 @@ typedef struct _ITEMSUPPORT
 }ItemSupport;
 
 
+//集合subSet是否包含在superSet中
+bool set_contain(const ItemSet& subSet,const ItemSet& superSet);
+
+
+
 #endif

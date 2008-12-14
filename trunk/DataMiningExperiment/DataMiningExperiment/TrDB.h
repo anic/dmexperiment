@@ -4,10 +4,13 @@
 
 #include <vector>
 #include <string>
+#include <map>
 #include "Transaction.h"
 
 
 typedef std::vector<Transaction> TransactionSet;
+typedef std::vector<int> ItemList; //记录TransactionSet中的Id号
+typedef std::map<Item,ItemList> ItemMap;
 
 /*!
  * \brief
@@ -21,7 +24,7 @@ typedef std::vector<Transaction> TransactionSet;
  */
 class TrDB
 {
-	
+private:
 	/*!
 	 * \brief
 	 * 事务集合
@@ -34,6 +37,13 @@ class TrDB
 	 * 前缀集
 	 */
 	ItemSet m_prefix;
+
+
+	/*!
+	 * \brief
+	 * 项的表
+	 */
+	ItemMap m_itemTable;
 
 public:
 	
@@ -56,6 +66,8 @@ public:
 	 * 
 	 */
 	const ItemSet& getPrefix() const{return m_prefix;}
+
+	const ItemMap& getItemTable() const{return m_itemTable;}
 
 	//从文件中读取为训练数据库
 	void createFromFile(std::string filename);
