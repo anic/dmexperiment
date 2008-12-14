@@ -4,24 +4,55 @@
 #include <set>
 
 
+/*!
+ * \brief
+ * Item的定义
+ */
 typedef int Item;
+
+
+/*!
+ * \brief
+ * Item集合的定义
+ */
 typedef std::set<Item> ItemSet;
+
+
+
+/*!
+ * \brief
+ * 分类标签定义
+ * 
+ */
 typedef int ClassLabel;
 
-typedef struct RULE
+
+/*!
+ * \brief
+ * 规则的定义
+*/
+typedef struct _RULE
 {
-	int id;
-	ItemSet body;
-	ClassLabel head;
-	double support;
-	double confidence;
+	//规则格式 id: body ==> head, support, confidence
+
+	int id;				//规则的序号
+	ItemSet body;		//规则的头，也就是
+	ClassLabel head;	//分类标签
+	double support;		//支持度
+	double confidence;	//可信度
 
 public:
-	RULE(int nId){
+	_RULE(int nId){
 		id = nId;
 		head = 0;
 		support = 0.0;
 		confidence = 0.0;
+	}
+
+	_RULE(){
+		id = 0;
+		head = 0;
+		support = confidence = 0.0;
 
 	}
 }Rule;

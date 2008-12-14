@@ -31,6 +31,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	//创建了数据库，作为测试，读取10行
 	trdb.createFromFile("mushroom.dat",10);
 
+	const TransactionSet& trans = trdb.getTransaction();
+	for(TransactionSet::const_iterator iter = trans.begin();
+		iter!=trans.end();++iter)
+	{
+		const Transaction& tran = (*iter);
+		std::cout<<tran.id<<std::endl;
+	}
+
 	DDPMineAlgorithm ddp;
 	HarmonyAlgorithm har;
 

@@ -72,14 +72,14 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 
 }
 
-void TrDB::createConditionalDB(const TrDB &parent, const Item &prefix)
+void TrDB::createConditionalDB(const TrDB &parent, const Item &prefix,int nMinSupport)
 {
 	ItemSet prefixSet;
 	prefixSet.insert(prefix);
-	createConditionalDB(parent,prefixSet);
+	createConditionalDB(parent,prefixSet,nMinSupport);
 }
 
-void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix)
+void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMinSupport)
 {
 
 }
