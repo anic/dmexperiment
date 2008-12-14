@@ -221,6 +221,10 @@
 			Name="Common"
 			>
 			<File
+				RelativePath=".\common.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\common.h"
 				>
 			</File>
