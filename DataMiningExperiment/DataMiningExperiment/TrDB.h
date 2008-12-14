@@ -11,6 +11,7 @@
 typedef std::vector<Transaction> TransactionSet;
 typedef std::vector<int> ItemList; //记录TransactionSet中的Id号
 typedef std::map<Item,ItemList> ItemMap;
+typedef std::map<ClassLabel,int> ClassSupportTable;
 
 /*!
  * \brief
@@ -45,8 +46,29 @@ private:
 	 */
 	ItemMap m_itemTable;
 
-public:
 	
+	/*!
+	 * \brief
+	 * 类的支持度列表
+	 */
+	ClassSupportTable m_classSupport;
+
+public:
+	//这个方法效率低，慎用
+	int getSupport(const Item& prefix,ClassLabel label) const;
+
+	//这个方法效率低，慎用
+	int getSupport(const ItemSet& prefix,ClassLabel label) const ;
+
+	//返回对应Label的支持度
+	int getSupport(ClassLabel label) const;
+
+	int getSize()const{return m_transactionSet.size(); }
+
+	//返回Tid的事务，注意此方法效率较低，能不用不用
+	//如果没有找到，返回id为-1的事务
+	const Transaction& getTransactionByTid(int nTid)const;
+
 	/*!
 	 * \brief
 	 * 获得事务集
@@ -66,6 +88,7 @@ public:
 	 * 
 	 */
 	const ItemSet& getPrefix() const{return m_prefix;}
+
 
 	const ItemMap& getItemTable() const{return m_itemTable;}
 

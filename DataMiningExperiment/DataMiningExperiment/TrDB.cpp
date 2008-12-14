@@ -38,11 +38,18 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 		string s;	
 		ss>>s;
 
-		if (maxLength >0 && index >maxLength) //如果已经到达最大的行数，返回
+		if (maxLength >0 && index >=maxLength) //如果已经到达最大的行数，返回
 			break;
 
 		Transaction t(index);
 		t.label = ::atoi(s.c_str());
+		//创建类支持度表
+		ClassSupportTable::iterator iterf = m_classSupport.find(t.label);
+		if (iterf == m_classSupport.end()) //没有之前的
+			m_classSupport.insert(::make_pair(t.label,1));
+		else
+			iterf->second++;
+
 		while(ss>>s)
 		{
 			Item item = ::atoi(s.substr(0,s.find_first_of(':')).c_str());
@@ -117,6 +124,14 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 			else
 				iterf->second++;
 		}
+
+		//创建类支持度表
+		ClassSupportTable::iterator iterf = m_classSupport.find(iter->label);
+		if (iterf == m_classSupport.end()) //没有之前的
+			m_classSupport.insert(::make_pair(iter->label,1));
+		else
+			iterf->second++;
+
 	}
 	
 	//挑出不满足支持度的Item
@@ -151,3 +166,44 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 
 }
 
+const Transaction& TrDB::getTransactionByTid(int nTid) const
+{
+	for(TransactionSet::const_iterator iter = m_transactionSet.begin();
+		iter!=m_transactionSet.end();
+		++iter)
+	{
+		if (iter->id == nTid)
+			return *iter;
+	}
+	return Transaction(-1);
+}
+
+int TrDB::getSupport(ClassLabel label) const
+{
+	ClassSupportTable::const_iterator iterf = m_classSupport.find(label);
+	if (iterf != m_classSupport.end()) //没有之前的
+		return iterf->second;
+	else
+		return 0;
+			
+}
+
+int TrDB::getSupport(const Item& prefix,ClassLabel label) const
+{
+	ItemSet items;
+	items.insert(prefix);
+	return getSupport(items,label);
+}
+
+int TrDB::getSupport(const ItemSet& prefix,ClassLabel label) const 
+{
+	int count =0;
+	for(TransactionSet::const_iterator iter = m_transactionSet.begin();
+		iter!=m_transactionSet.end();
+		++iter)
+	{
+		if (set_contain(prefix,iter->items)) //事务包含新的前缀
+			++count;
+	}
+	return count;
+}
