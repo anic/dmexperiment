@@ -57,6 +57,15 @@ public:
 	}
 }Rule;
 
+typedef struct _ITEMSUPPORT
+{
+	Item item;		//项名称
+	int support;	//支持度
+	_ITEMSUPPORT(Item item,int nSupport) {
+		this->item = item;
+		support = nSupport;
+	}
+}ItemSupport;
 
 
 #endif
