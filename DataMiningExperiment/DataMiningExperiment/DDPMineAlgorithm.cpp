@@ -10,7 +10,8 @@ DDPMineAlgorithm::~DDPMineAlgorithm(void)
 {
 }
 
-Result::const_iterator DDPMineAlgorithm::execute(const TrDB& trdb,int nSupport)
+bool DDPMineAlgorithm::execute(const TrDB& trdb,int nSupport)
 {
-	return m_result.begin();
+	//算法结果放在m_result中
+	return true;
 }

@@ -10,7 +10,8 @@ HarmonyAlgorithm::~HarmonyAlgorithm(void)
 {
 }
 
-Result::const_iterator HarmonyAlgorithm::execute(const TrDB& trdb,int nSupport)
+bool HarmonyAlgorithm::execute(const TrDB& trdb,int nSupport)
 {
-	return m_result.begin();
+	//算法结果放在m_result中
+	return true;
 }
