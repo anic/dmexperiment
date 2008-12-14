@@ -39,7 +39,8 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//b.insert(2);
 	//r = b<a;
-		
+
+	//²âÊÔÒ»ÏÂÐÞ¸Ä
 
 	TrDB trdb;
 
