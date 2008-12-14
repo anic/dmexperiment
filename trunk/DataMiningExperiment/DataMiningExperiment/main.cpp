@@ -27,9 +27,26 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,int nMinSupport)
 int _tmain(int argc, _TCHAR* argv[])
 {
 
+	//std::set<int> a,b;
+	//a.insert(1);
+	//a.insert(2);
+	//a.insert(3);
+
+	//b.insert(1);
+
+	////std::cout<<()<<std::endl;
+	//bool r = b<a;
+
+	//b.insert(2);
+	//r = b<a;
+		
+
 	TrDB trdb;
 	//创建了数据库，作为测试，读取10行
 	trdb.createFromFile("mushroom.dat",10);
+
+	TrDB cdb;
+	cdb.createConditionalDB(trdb,2,2);
 
 	const TransactionSet& trans = trdb.getTransaction();
 	for(TransactionSet::const_iterator iter = trans.begin();

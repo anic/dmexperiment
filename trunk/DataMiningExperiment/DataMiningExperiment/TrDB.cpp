@@ -3,6 +3,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <map>
+#include <algorithm>
 #include "windows.h"
 using namespace std;
 TrDB::TrDB(void)
@@ -81,6 +83,71 @@ void TrDB::createConditionalDB(const TrDB &parent, const Item &prefix,int nMinSu
 
 void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMinSupport)
 {
+	//将前缀放入
+	this->m_prefix.insert(parent.m_prefix.begin(),parent.m_prefix.end());
+	this->m_prefix.insert(prefix.begin(),prefix.end());
+
+	const TransactionSet& transactions = parent.getTransaction();
+	for(TransactionSet::const_iterator iter = transactions.begin();
+		iter!=transactions.end();++iter)
+	{
+		ItemSet temp;
+		::set_difference(m_prefix.begin(),
+			m_prefix.end(),
+			iter->items.begin(),
+			iter->items.end(),
+			std::insert_iterator<ItemSet>(temp, temp.begin() ));
+
+		if (temp.empty()) //事务包含新的前缀，则插入到投影数据库
+			m_transactionSet.push_back(*iter);
+	}
+
+	//计算支持度
+	map<Item,int> header;
+	for(TransactionSet::iterator iter = m_transactionSet.begin();
+		iter != m_transactionSet.end();++iter)
+	{
+		for(ItemSet::iterator inner = (*iter).items.begin();
+			inner != (*iter).items.end();
+			++inner)
+		{
+			map<Item,int>::iterator iterf = header.find(*inner);
+			if (iterf == header.end()) //没有之前的
+				header.insert(::make_pair(*inner,1));
+			else
+				iterf->second++;
+		}
+	}
+	
+	//挑出不满足支持度的Item
+	ItemSet unsupported;
+	for(map<Item,int>::iterator iter = header.begin();
+		iter !=header.end();++iter)
+	{
+		if (iter->second < nMinSupport)
+			unsupported.insert(iter->first);
+	}
+	unsupported.insert(m_prefix.begin(),m_prefix.end());
+
+	//去除不满足支持度的项
+	if(!unsupported.empty())
+	{
+		for(TransactionSet::iterator iter = m_transactionSet.begin();
+			iter != m_transactionSet.end();++iter)
+		{
+			ItemSet removed;
+
+			//求集合差
+			::set_difference(
+				iter->items.begin(),
+				iter->items.end(),
+				unsupported.begin(),
+				unsupported.end(),
+				std::insert_iterator<ItemSet>(removed, removed.begin() ));
+
+			iter->items.swap(removed);
+		}
+	}
 
 }
 
