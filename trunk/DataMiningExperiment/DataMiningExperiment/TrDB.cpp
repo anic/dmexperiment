@@ -187,8 +187,8 @@ const Transaction& TrDB::getTransactionByTid(int nTid) const
 int TrDB::getSupport(ClassLabel label) const
 {
 	//在m_itemTable中，label是以其相反数的形式存储的
-	ItemMap::const_iterator iterf = m_itemTable.find(-label);
-	if (iterf != m_itemTable.end())
+	ClassMap::const_iterator iterf = m_classTable.find(label);
+	if (iterf != m_classTable.end())
 		return iterf->second.size();
 	else
 		return 0;
