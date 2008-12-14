@@ -11,7 +11,7 @@
 typedef std::vector<Transaction> TransactionSet;
 typedef std::vector<int> ItemList; //记录TransactionSet中的Id号
 typedef std::map<Item,ItemList> ItemMap;
-typedef std::map<ClassLabel,int> ClassSupportTable;
+typedef std::map<ClassLabel,ItemList> ClassMap;
 
 /*!
  * \brief
@@ -42,18 +42,24 @@ private:
 
 	/*!
 	 * \brief
-	 * 项的表
+	 * 项的表,格式为 {2,{0,1,2}} 表示 2这个item,对应m_transactionSet[0],m_transactionSet[1],m_transactionSet[2]
+	 * 这个不是tid,而是对应的下标
+	 *
+	 * 这个表还存了classlabel {-1,{0,1,2,3,4}},{-2,{5,6,7,8}}，用相反数表示了classLabel对应的transaction
 	 */
 	ItemMap m_itemTable;
 
-	
-	/*!
-	 * \brief
-	 * 类的支持度列表
-	 */
-	ClassSupportTable m_classSupport;
+	ClassMap m_classTable;
 
+	void setItemMap(const Item& item,int tid);
+	void setClassMap(const ClassLabel& label,int tid);
+	
 public:
+
+	const ItemList& getTransactionsByClass(const ClassLabel& label)const;
+
+	const ItemList& getTransactionsByItem(const Item& item) const;
+
 	//这个方法效率低，慎用
 	int getSupport(const Item& prefix,ClassLabel label) const;
 
@@ -91,6 +97,8 @@ public:
 
 
 	const ItemMap& getItemTable() const{return m_itemTable;}
+
+	const ClassMap& getClassTable() const{return m_classTable;}
 
 	//从文件中读取为训练数据库
 	void createFromFile(std::string filename);
