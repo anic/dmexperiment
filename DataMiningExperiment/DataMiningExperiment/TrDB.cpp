@@ -97,7 +97,7 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 	else if (nNewPrefix == 1) //如果是添加一个新的前缀，可以利用已有的头表索引加速
 	{
 		ItemMap::const_iterator iter = parent.m_itemTable.find(*prefix.begin());
-		for(ItemList::const_iterator iter2 = iter->second.begin();
+		for(TransactionIndexList::const_iterator iter2 = iter->second.begin();
 			iter2!=iter->second.end();
 			++iter2)
 		{
@@ -196,13 +196,28 @@ int TrDB::getSupport(ClassLabel label) const
 
 int TrDB::getSupport(const Item& prefix,ClassLabel label) const
 {
-	ItemSet items;
-	items.insert(prefix);
-	return getSupport(items,label);
+	ItemMap::const_iterator iterf = m_itemTable.find(prefix);
+	if (iterf!=m_itemTable.end())
+	{
+		int result =0;
+		for(TransactionIndexList::const_iterator iter = iterf->second.begin();
+			iter!=iterf->second.end();
+			++iter)
+		{
+			if (m_transactionSet[*iter].label == label)
+				++result;
+		}
+		return result;
+	}
+	else
+		return 0;
 }
 
 int TrDB::getSupport(const ItemSet& prefix,ClassLabel label) const 
 {
+	if (prefix.size() == 1)
+		return getSupport(*prefix.begin(),label);
+
 	int count =0;
 	for(TransactionSet::const_iterator iter = m_transactionSet.begin();
 		iter!=m_transactionSet.end();
@@ -221,7 +236,7 @@ void TrDB::setItemMap(const Item& item,int tid)
 	ItemMap::iterator iterf = m_itemTable.find(item);
 	if (iterf == m_itemTable.end()) //没有之前的
 	{
-		ItemList firstList;
+		TransactionIndexList firstList;
 		firstList.push_back(tid);
 		m_itemTable.insert(make_pair(item,firstList));
 	}
@@ -235,7 +250,7 @@ void TrDB::setClassMap(const ClassLabel& label,int tid)
 	ClassMap::iterator iterf = m_classTable.find(label);
 	if (iterf == m_classTable.end()) //没有之前的
 	{
-		ItemList firstList;
+		TransactionIndexList firstList;
 		firstList.push_back(tid);
 		m_classTable.insert(make_pair(label,firstList));
 	}
@@ -243,20 +258,20 @@ void TrDB::setClassMap(const ClassLabel& label,int tid)
 		iterf->second.push_back(tid);
 }
 
-const ItemList& TrDB::getTransactionsByClass(const ClassLabel& label)const
+const TransactionIndexList& TrDB::getTransactionsByClass(const ClassLabel& label)const
 {
 	ClassMap::const_iterator iterf = m_classTable.find(label);
 	if(iterf!=m_classTable.end())
 		return iterf->second;
 	else
-		return ItemList();
+		return TransactionIndexList();
 }
 
-const ItemList& TrDB::getTransactionsByItem(const Item& item) const
+const TransactionIndexList& TrDB::getTransactionsByItem(const Item& item) const
 {
 	ItemMap::const_iterator iterf = m_itemTable.find(item);
 	if(iterf!=m_itemTable.end())
 		return iterf->second;
 	else
-		return ItemList();
+		return TransactionIndexList();
 }

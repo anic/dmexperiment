@@ -9,9 +9,9 @@
 
 
 typedef std::vector<Transaction> TransactionSet;
-typedef std::vector<int> ItemList; //记录TransactionSet中的Id号
-typedef std::map<Item,ItemList> ItemMap;
-typedef std::map<ClassLabel,ItemList> ClassMap;
+typedef std::vector<int> TransactionIndexList; //记录TransactionSet中的Id号
+typedef std::map<Item,TransactionIndexList> ItemMap;
+typedef std::map<ClassLabel,TransactionIndexList> ClassMap;
 
 /*!
  * \brief
@@ -56,9 +56,9 @@ private:
 	
 public:
 
-	const ItemList& getTransactionsByClass(const ClassLabel& label)const;
+	const TransactionIndexList& getTransactionsByClass(const ClassLabel& label)const;
 
-	const ItemList& getTransactionsByItem(const Item& item) const;
+	const TransactionIndexList& getTransactionsByItem(const Item& item) const;
 
 	//这个方法效率低，慎用
 	int getSupport(const Item& prefix,ClassLabel label) const;

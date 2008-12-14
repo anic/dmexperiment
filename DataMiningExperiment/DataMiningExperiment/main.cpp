@@ -53,8 +53,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	TrDB cdb;
 	cdb.createConditionalDB(trdb,2,2);
 	int d = cdb.getSupport(1);
-	const ItemList& dd = cdb.getTransactionsByItem(3);
-
+	const TransactionIndexList& dd = cdb.getTransactionsByItem(3);
+	int f = cdb.getSupport(3,2);
 	const TransactionSet& trans = trdb.getTransaction();
 	for(TransactionSet::const_iterator iter = trans.begin();
 		iter!=trans.end();++iter)
