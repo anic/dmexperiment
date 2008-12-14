@@ -42,11 +42,17 @@ int _tmain(int argc, _TCHAR* argv[])
 		
 
 	TrDB trdb;
+
 	//创建了数据库，作为测试，读取10行
 	trdb.createFromFile("mushroom.dat",10);
 
+	int a = trdb.getSize();
+	const Transaction& b = trdb.getTransactionByTid(2);
+	const Transaction& c = trdb.getTransactionByTid(100);
+	
 	TrDB cdb;
 	cdb.createConditionalDB(trdb,2,2);
+	int d = cdb.getSupport(1);
 
 	const TransactionSet& trans = trdb.getTransaction();
 	for(TransactionSet::const_iterator iter = trans.begin();
