@@ -43,29 +43,17 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 
 		Transaction t(index);
 		t.label = ::atoi(s.c_str());
-		//创建类支持度表
-		ClassSupportTable::iterator iterf = m_classSupport.find(t.label);
-		if (iterf == m_classSupport.end()) //没有之前的
-			m_classSupport.insert(::make_pair(t.label,1));
-		else
-			iterf->second++;
+		
+		//记录class与transaction的对应
+		this->setClassMap(t.label,index);
 
 		while(ss>>s)
 		{
 			Item item = ::atoi(s.substr(0,s.find_first_of(':')).c_str());
 			t.items.insert(item);
 
-			//创建头表
-			ItemMap::iterator iterf = m_itemTable.find(item);
-			if (iterf == m_itemTable.end()) //没有之前的
-			{
-				ItemList firstList;
-				firstList.push_back(index);
-				m_itemTable.insert(::make_pair(item,firstList));
-			}
-			else
-				iterf->second.push_back(index);
-			
+			//记录item与transaction的对应
+			this->setItemMap(item,index);
 		}
 		index++;
 		m_transactionSet.push_back(t);
@@ -80,6 +68,14 @@ void TrDB::createConditionalDB(const TrDB &parent, const Item &prefix,int nMinSu
 	prefixSet.insert(prefix);
 	createConditionalDB(parent,prefixSet,nMinSupport);
 }
+
+
+bool empty(const Transaction& t) {
+	return t.items.empty();
+	//return false;
+}
+
+
 
 void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMinSupport)
 {
@@ -98,7 +94,7 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 				m_transactionSet.push_back(*iter);
 		}
 	}
-	else if (nNewPrefix == 1) //如果是添加一个新的前缀，可以利用已有的头表索引
+	else if (nNewPrefix == 1) //如果是添加一个新的前缀，可以利用已有的头表索引加速
 	{
 		ItemMap::const_iterator iter = parent.m_itemTable.find(*prefix.begin());
 		for(ItemList::const_iterator iter2 = iter->second.begin();
@@ -124,14 +120,6 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 			else
 				iterf->second++;
 		}
-
-		//创建类支持度表
-		ClassSupportTable::iterator iterf = m_classSupport.find(iter->label);
-		if (iterf == m_classSupport.end()) //没有之前的
-			m_classSupport.insert(::make_pair(iter->label,1));
-		else
-			iterf->second++;
-
 	}
 	
 	//挑出不满足支持度的Item
@@ -162,8 +150,26 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 
 			iter->items.swap(removed);
 		}
-	}
 
+		//去除空的事务
+		TransactionSet::iterator i = remove_if(m_transactionSet.begin(),m_transactionSet.end(),empty);
+		m_transactionSet.erase(i, m_transactionSet.end());
+		
+
+		//索引新的Item列表
+		for(TransactionSet::iterator iter = m_transactionSet.begin();
+			iter != m_transactionSet.end();++iter)
+		{
+			for(ItemSet::iterator inner = iter->items.begin();
+				inner!=iter->items.end();
+				++inner)
+			{
+				setItemMap(*inner,iter->id);
+			}
+
+			setClassMap(iter->label,iter->id);
+		}
+	}
 }
 
 const Transaction& TrDB::getTransactionByTid(int nTid) const
@@ -180,12 +186,12 @@ const Transaction& TrDB::getTransactionByTid(int nTid) const
 
 int TrDB::getSupport(ClassLabel label) const
 {
-	ClassSupportTable::const_iterator iterf = m_classSupport.find(label);
-	if (iterf != m_classSupport.end()) //没有之前的
-		return iterf->second;
+	//在m_itemTable中，label是以其相反数的形式存储的
+	ItemMap::const_iterator iterf = m_itemTable.find(-label);
+	if (iterf != m_itemTable.end())
+		return iterf->second.size();
 	else
 		return 0;
-			
 }
 
 int TrDB::getSupport(const Item& prefix,ClassLabel label) const
@@ -206,4 +212,51 @@ int TrDB::getSupport(const ItemSet& prefix,ClassLabel label) const
 			++count;
 	}
 	return count;
+}
+
+
+void TrDB::setItemMap(const Item& item,int tid)
+{
+	//创建头表
+	ItemMap::iterator iterf = m_itemTable.find(item);
+	if (iterf == m_itemTable.end()) //没有之前的
+	{
+		ItemList firstList;
+		firstList.push_back(tid);
+		m_itemTable.insert(make_pair(item,firstList));
+	}
+	else
+		iterf->second.push_back(tid);
+}
+
+void TrDB::setClassMap(const ClassLabel& label,int tid)
+{
+	//创建头表
+	ClassMap::iterator iterf = m_classTable.find(label);
+	if (iterf == m_classTable.end()) //没有之前的
+	{
+		ItemList firstList;
+		firstList.push_back(tid);
+		m_classTable.insert(make_pair(label,firstList));
+	}
+	else
+		iterf->second.push_back(tid);
+}
+
+const ItemList& TrDB::getTransactionsByClass(const ClassLabel& label)const
+{
+	ClassMap::const_iterator iterf = m_classTable.find(label);
+	if(iterf!=m_classTable.end())
+		return iterf->second;
+	else
+		return ItemList();
+}
+
+const ItemList& TrDB::getTransactionsByItem(const Item& item) const
+{
+	ItemMap::const_iterator iterf = m_itemTable.find(item);
+	if(iterf!=m_itemTable.end())
+		return iterf->second;
+	else
+		return ItemList();
 }
