@@ -1,6 +1,8 @@
 #pragma once
 #include "FPTree/fptree.h"
 #include "common.h"
+#include "Trdb.h"
+
 #include <set>
 #include <vector>
 
@@ -19,4 +21,10 @@ public:
 	void createConditionalFPTree(const FPTreeEx& parent,::Item prefix,int nMinSupport);
 
 	void createConditionalFPTree(const FPTreeEx& parent,::Item prefix);
+
+	void createFromTrDB(const TrDB& trdb,int nMinSupport);
+
+	void createFromTrDB(const TrDB& trdb);
+
+	
 };

@@ -9,9 +9,9 @@
 #include <algorithm>
 #include "windows.h"
 using namespace std;
-TrDB::TrDB(void)
+TrDB::TrDB(void):m_nMinSupport(0)
 {
-
+	
 }
 
 TrDB::~TrDB(void)
@@ -62,7 +62,7 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 
 }
 
-void TrDB::createConditionalDB(const TrDB &parent, const Item &prefix,int nMinSupport)
+void TrDB::createConditionalDB(const TrDB &parent, Item prefix,int nMinSupport)
 {
 	ItemSet prefixSet;
 	prefixSet.insert(prefix);
@@ -72,13 +72,15 @@ void TrDB::createConditionalDB(const TrDB &parent, const Item &prefix,int nMinSu
 
 bool empty(const Transaction& t) {
 	return t.items.empty();
-	//return false;
 }
 
 
 
 void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMinSupport)
 {
+
+	m_nMinSupport = nMinSupport;
+
 	//将前缀放入
 	this->m_prefix.insert(parent.m_prefix.begin(),parent.m_prefix.end());
 	this->m_prefix.insert(prefix.begin(),prefix.end());
@@ -172,16 +174,16 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 	}
 }
 
-const Transaction& TrDB::getTransactionByTid(int nTid) const
+const Transaction* TrDB::getTransactionByTid(int nTid) const
 {
 	for(TransactionSet::const_iterator iter = m_transactionSet.begin();
 		iter!=m_transactionSet.end();
 		++iter)
 	{
 		if (iter->id == nTid)
-			return *iter;
+			return &(*iter);
 	}
-	return Transaction(-1);
+	return NULL;
 }
 
 int TrDB::getSupport(ClassLabel label) const
@@ -258,20 +260,34 @@ void TrDB::setClassMap(ClassLabel label,int tIndex)
 		iterf->second.push_back(tIndex);
 }
 
-const TransactionIndexList& TrDB::getTransactionsByClass(ClassLabel label)const
+const TransactionIndexList* TrDB::getTransactionsByClass(ClassLabel label)const
 {
 	ClassMap::const_iterator iterf = m_classTable.find(label);
 	if(iterf!=m_classTable.end())
-		return iterf->second;
+		return &(iterf->second);
 	else
-		return TransactionIndexList();
+		return NULL;
 }
 
-const TransactionIndexList& TrDB::getTransactionsByItem(Item item) const
+const TransactionIndexList* TrDB::getTransactionsByItem(Item item) const
 {
 	ItemMap::const_iterator iterf = m_itemTable.find(item);
 	if(iterf!=m_itemTable.end())
-		return iterf->second;
+		return &(iterf->second);
 	else
-		return TransactionIndexList();
+		return NULL;		
+}
+
+void TrDB::removeItem(Item item)
+{
+	/*ItemMap::const_iterator iterf = m_itemTable.find(item);
+	if(iterf!=m_itemTable.end())
+	{
+		const TransactionIndexList& removed = iterf->second;
+		int count = 0;
+		for(TransactionIndexList::const_iterator iter = removed.begin();
+			iter!=removed.end();iter++)
+			
+
+	}*/
 }

@@ -25,7 +25,7 @@ typedef std::map<ClassLabel,TransactionIndexList> ClassMap;
  */
 class TrDB
 {
-private:
+protected:
 	/*!
 	 * \brief
 	 * 事务集合
@@ -51,14 +51,19 @@ private:
 
 	ClassMap m_classTable;
 
+	int m_nMinSupport;
+
 	void setItemMap(Item item,int tIndex);
+
 	void setClassMap(ClassLabel label,int tIndex);
 	
 public:
 
-	const TransactionIndexList& getTransactionsByClass(ClassLabel label)const;
+	int getMinSupport() const{ return m_nMinSupport;}
 
-	const TransactionIndexList& getTransactionsByItem(Item item) const;
+	const TransactionIndexList* getTransactionsByClass(ClassLabel label)const;
+
+	const TransactionIndexList* getTransactionsByItem(Item item) const;
 
 	//如果只有一个Item，用这个方法效率比较高
 	int getSupport(Item prefix,ClassLabel label) const;
@@ -73,7 +78,7 @@ public:
 
 	//返回Tid的事务，注意此方法效率较低，能不用不用
 	//如果没有找到，返回id为-1的事务
-	const Transaction& getTransactionByTid(int nTid)const;
+	const Transaction* getTransactionByTid(int nTid)const;
 
 	/*!
 	 * \brief
@@ -143,8 +148,9 @@ public:
 	 * 新的前缀是在上级投影数据库的前缀上，加上prefix；投影的时候会将不满足最小支持度的item删除
 	 * 
 	 */
-	void createConditionalDB(const TrDB& parent,const Item& prefix,int nMinSupport);
+	void createConditionalDB(const TrDB& parent,Item prefix,int nMinSupport);
 
+	void removeItem(Item item);
 
 
 	TrDB(void);

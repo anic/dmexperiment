@@ -18,54 +18,6 @@ int FPTreeEx::getSupport(::Item prefix, ClassLabel label) const
 	else
 		return 0;
 }
-//bool FPTreeEx::project(::Item prefix, FPTreeEx &cfpt) const
-//{
-//	return project(prefix,cfpt,this->minsup);
-//}
-//
-//bool FPTreeEx::project(::Item prefix, FPTreeEx &cfpt,int nMinSupport) const
-//{
-//
-//	if(header.size() == 0) 
-//		return false;
-//
-//	set<fptree::Item>::const_iterator it = header.find(fptree::Item(prefix,0));
-//	if (it == header.end())
-//		return false;
-//	//构造一个新的FPTree
-//	//设置最小支持度和输出
-//	cfpt.setMinsup(nMinSupport); 
-//	cfpt.setOutput(out);
-//
-//	Item_ *i;
-//	//current[depth-1] = it->getId(); 
-//	int *tmp = new int[header.size()];
-//	for(i = it->getNext(); i; i = i->nodelink) {
-//		int l=0;
-//		for(Item_ *p=i->parent; p; p = p->parent) tmp[l++] = p->id; //遍历父亲
-//
-//		//获得事务的个数
-//		Transaction *t = new Transaction(l);
-//		for(int j=0; j<l; j++) t->t[j] = tmp[l-j-1]; //将事务赋值
-//
-//		cfpt.processItems(t,i->supp); //将事务插入新的tree中
-//		delete t;
-//	}
-//	cfpt.Prune(); //剪枝
-//
-//	for(i = it->getNext(); i; i = i->nodelink) {
-//		int l=0;
-//		for(Item_ *p=i->parent; p; p = p->parent) tmp[l++] = p->id;
-//		Transaction *t = new Transaction(l);
-//		for(int j=0; j<l; j++) t->t[j] = tmp[l-j-1];
-//		cfpt.rocessTransaction(t,i->supp);
-//		delete t;
-//	}
-//	delete [] tmp;
-//	//print(current,depth,0,0,it->getSupport()); //输出当前结果
-//
-//	return true;
-//}
 
 void FPTreeEx::createConditionalFPTree(const FPTreeEx& parent,::Item prefix,int nMinSupport)
 {
@@ -154,3 +106,67 @@ void FPTreeEx::getHeader(std::vector<::Item>& output,bool bSortedSupport) const
 	}
 }
 
+void FPTreeEx::createFromTrDB(const TrDB& trdb,int nMinSupport)
+{
+
+	setMinsup(nMinSupport);
+	//fpt->setOutput(out);
+
+	int tmin=1000000, tmax=0, ttotal=0, tnr=0;
+	const TransactionSet & data = trdb.getTransaction();
+	for(TransactionSet::const_iterator iter = data.begin();
+		iter!=data.end();
+		++iter)
+	{
+
+		fptree::Transaction *t = new fptree::Transaction(iter->items.size());
+
+		int i=0;
+		for(ItemSet::const_iterator it = iter->items.begin();
+			it !=iter->items.end();++it,++i)
+			t->t[i] = *it;
+
+		if(t->length) {
+			this->processItems(t);
+			ttotal += t->length;
+			if(t->length < tmin) tmin = t->length;
+			if(t->length > tmax) tmax = t->length;
+		}
+		delete t;
+		tnr++;
+	}
+
+	ReOrder();
+	Prune();
+	
+	for(TransactionSet::const_iterator iter = data.begin();
+		iter!=data.end();
+		++iter)
+	{
+		fptree::Transaction *t = new fptree::Transaction(iter->items.size());
+		int i=0;
+		for(ItemSet::const_iterator it = iter->items.begin();
+			it !=iter->items.end();++it,++i)
+			t->t[i] = *it;
+
+
+		vector<int> list;
+		for(i=0; i<t->length; i++) {
+			set<fptree::Element>::iterator it = this->relist->find(fptree::Element(t->t[i],0));
+			if(it!=this->relist->end()) list.push_back(it->id);
+		}
+		int size=list.size();
+		sort(list.begin(), list.end());
+		delete t;
+
+		t = new fptree::Transaction(size);
+		for(i=0; i<size; i++) t->t[i] = list[i];
+		if(t->length) this->processTransaction(t);
+		delete t;
+	}
+}
+
+void FPTreeEx::createFromTrDB(const TrDB& trdb)
+{
+	createFromTrDB(trdb,trdb.getMinSupport());
+}
