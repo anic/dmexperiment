@@ -8,7 +8,7 @@ Update  : 04/04/2003
 #include <vector>
 using namespace std;
 #include "data.h"
-namespace FPTree
+namespace fptree
 {
 	Transaction::Transaction(const Transaction &tr)
 	{

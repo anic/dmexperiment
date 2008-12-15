@@ -5,7 +5,7 @@ Author  : Bart Goethals
 Update  : 4/4/2003
 ----------------------------------------------------------------------*/
 #pragma once
-namespace FPTree
+namespace fptree
 {
 	class FPgrowth
 	{

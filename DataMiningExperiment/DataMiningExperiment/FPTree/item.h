@@ -8,7 +8,7 @@ Update  : 4/4/2003
 #include <set>
 
 using namespace std;
-namespace FPTree
+namespace fptree
 {
 	class Item;
 

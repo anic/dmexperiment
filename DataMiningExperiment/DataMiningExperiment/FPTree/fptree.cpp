@@ -12,7 +12,7 @@ using namespace std;
 #include "data.h"
 #include "item.h"
 #include "fptree.h"
-namespace FPTree
+namespace fptree
 {
 	int *FPtree::remap = 0;
 	set<Element> *FPtree::relist = 0;
@@ -217,28 +217,50 @@ namespace FPTree
 	void FPtree::print(int *itemset, int il, int *comb, int cl, int support, int spos, int depth, int *current)
 	{
 		if(current==0) {
-			if(out) {
+			//if(out) {
+			//	set<int> outset;
+			//	for(int j=0; j<il; j++) outset.insert(remap[itemset[j]]); 
+			//	for(set<int>::iterator k=outset.begin(); k!=outset.end(); k++) fprintf(out, "%d ", *k);
+			//	fprintf(out, "(%d)\n", support);
+			//	if(cl) {
+			//		current = new int[cl];
+			//		print(itemset,il,comb,cl,support,0,1,current);
+			//		delete [] current;
+			//	}
+			//}
+
+			
 				set<int> outset;
 				for(int j=0; j<il; j++) outset.insert(remap[itemset[j]]); 
-				for(set<int>::iterator k=outset.begin(); k!=outset.end(); k++) fprintf(out, "%d ", *k);
-				fprintf(out, "(%d)\n", support);
+				for(set<int>::iterator k=outset.begin(); k!=outset.end(); k++) printf("%d ", *k);
+				printf("(%d)\n", support);
 				if(cl) {
 					current = new int[cl];
 					print(itemset,il,comb,cl,support,0,1,current);
 					delete [] current;
 				}
-			}
+			
+			
 		}
 		else {
 			int loper = spos;
 			spos = cl;
-			while(--spos >= loper) {
+			/*while(--spos >= loper) {
 				set<int> outset;
 				current[depth-1] = comb[spos];
 				for(int i=0; i<depth; i++) outset.insert(remap[current[i]]); 
 				for(int j=0; j<il; j++) outset.insert(remap[itemset[j]]); 
 				for(set<int>::iterator k=outset.begin(); k!=outset.end(); k++) fprintf(out, "%d ", *k);
 				fprintf(out, "(%d)\n", support);
+				print(itemset, il, comb, cl, support, spos+1, depth+1, current);*/
+
+			while(--spos >= loper) {
+				set<int> outset;
+				current[depth-1] = comb[spos];
+				for(int i=0; i<depth; i++) outset.insert(remap[current[i]]); 
+				for(int j=0; j<il; j++) outset.insert(remap[itemset[j]]); 
+				for(set<int>::iterator k=outset.begin(); k!=outset.end(); k++) printf( "%d ", *k);
+				printf("(%d)\n", support);
 				print(itemset, il, comb, cl, support, spos+1, depth+1, current);
 			}
 		}

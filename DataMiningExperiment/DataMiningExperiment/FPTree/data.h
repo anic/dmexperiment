@@ -6,7 +6,7 @@ Update  : 4/4/2003
 ----------------------------------------------------------------------*/
 #pragma once
 #include <stdio.h>
-namespace FPTree
+namespace fptree
 {
 	class Transaction
 	{
