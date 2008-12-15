@@ -233,6 +233,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\FPTreeEx.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\FPTreeEx.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Transaction.cpp"
 				>
 			</File>

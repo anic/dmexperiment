@@ -164,10 +164,10 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 				inner!=iter->items.end();
 				++inner)
 			{
-				setItemMap(*inner,iter->id);
+				setItemMap(*inner,iter - m_transactionSet.begin());
 			}
 
-			setClassMap(iter->label,iter->id);
+			setClassMap(iter->label,iter - m_transactionSet.begin());
 		}
 	}
 }
@@ -194,7 +194,7 @@ int TrDB::getSupport(ClassLabel label) const
 		return 0;
 }
 
-int TrDB::getSupport(const Item& prefix,ClassLabel label) const
+int TrDB::getSupport(Item prefix,ClassLabel label) const
 {
 	ItemMap::const_iterator iterf = m_itemTable.find(prefix);
 	if (iterf!=m_itemTable.end())
@@ -230,35 +230,35 @@ int TrDB::getSupport(const ItemSet& prefix,ClassLabel label) const
 }
 
 
-void TrDB::setItemMap(const Item& item,int tid)
+void TrDB::setItemMap(Item item,int tIndex)
 {
 	//创建头表
 	ItemMap::iterator iterf = m_itemTable.find(item);
 	if (iterf == m_itemTable.end()) //没有之前的
 	{
 		TransactionIndexList firstList;
-		firstList.push_back(tid);
+		firstList.push_back(tIndex);
 		m_itemTable.insert(make_pair(item,firstList));
 	}
 	else
-		iterf->second.push_back(tid);
+		iterf->second.push_back(tIndex);
 }
 
-void TrDB::setClassMap(const ClassLabel& label,int tid)
+void TrDB::setClassMap(ClassLabel label,int tIndex)
 {
 	//创建头表
 	ClassMap::iterator iterf = m_classTable.find(label);
 	if (iterf == m_classTable.end()) //没有之前的
 	{
 		TransactionIndexList firstList;
-		firstList.push_back(tid);
+		firstList.push_back(tIndex);
 		m_classTable.insert(make_pair(label,firstList));
 	}
 	else
-		iterf->second.push_back(tid);
+		iterf->second.push_back(tIndex);
 }
 
-const TransactionIndexList& TrDB::getTransactionsByClass(const ClassLabel& label)const
+const TransactionIndexList& TrDB::getTransactionsByClass(ClassLabel label)const
 {
 	ClassMap::const_iterator iterf = m_classTable.find(label);
 	if(iterf!=m_classTable.end())
@@ -267,7 +267,7 @@ const TransactionIndexList& TrDB::getTransactionsByClass(const ClassLabel& label
 		return TransactionIndexList();
 }
 
-const TransactionIndexList& TrDB::getTransactionsByItem(const Item& item) const
+const TransactionIndexList& TrDB::getTransactionsByItem(Item item) const
 {
 	ItemMap::const_iterator iterf = m_itemTable.find(item);
 	if(iterf!=m_itemTable.end())

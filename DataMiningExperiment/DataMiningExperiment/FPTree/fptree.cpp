@@ -193,6 +193,9 @@ namespace fptree
 			list.insert(Element(itI->getSupport(), itI->getId()));
 
 		remap = new int[list.size()+1];
+
+		if(relist!=NULL)
+			delete relist;
 		relist = new set<Element>;
 		header.clear();
 		int i=1;

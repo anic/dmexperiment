@@ -51,17 +51,17 @@ private:
 
 	ClassMap m_classTable;
 
-	void setItemMap(const Item& item,int tid);
-	void setClassMap(const ClassLabel& label,int tid);
+	void setItemMap(Item item,int tIndex);
+	void setClassMap(ClassLabel label,int tIndex);
 	
 public:
 
-	const TransactionIndexList& getTransactionsByClass(const ClassLabel& label)const;
+	const TransactionIndexList& getTransactionsByClass(ClassLabel label)const;
 
-	const TransactionIndexList& getTransactionsByItem(const Item& item) const;
+	const TransactionIndexList& getTransactionsByItem(Item item) const;
 
-	//这个方法效率低，慎用
-	int getSupport(const Item& prefix,ClassLabel label) const;
+	//如果只有一个Item，用这个方法效率比较高
+	int getSupport(Item prefix,ClassLabel label) const;
 
 	//这个方法效率低，慎用
 	int getSupport(const ItemSet& prefix,ClassLabel label) const ;
