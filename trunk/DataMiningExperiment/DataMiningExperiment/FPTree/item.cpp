@@ -7,7 +7,7 @@ Update  : 04/04/2003
 #include "stdafx.h"
 #include <stdio.h>
 #include "item.h"
-namespace FPTree
+namespace fptree
 {
 	Item_::Item_()
 	{

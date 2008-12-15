@@ -16,7 +16,7 @@ using namespace std;
 #include "item.h"
 #include "fptree.h"
 #include "fpgrowth.h"
-namespace FPTree
+namespace fptree
 {
 	FPgrowth::FPgrowth() : data(0), out(0)
 	{

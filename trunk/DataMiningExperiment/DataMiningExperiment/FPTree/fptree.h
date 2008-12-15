@@ -6,7 +6,8 @@ Update  : 8/4/2003 - single prefix path bug fixed (Thanks to Xiaonan Wang)
 ----------------------------------------------------------------------*/
 #pragma once
 #include <set>
-namespace FPTree
+#include "item.h"
+namespace fptree
 {
 	using namespace std;
 
@@ -43,6 +44,7 @@ namespace FPTree
 
 		set<Item> header;
 		set<Item> *root;
+
 		int minsup;
 		unsigned nodes;
 		bool singlepath;
