@@ -7,6 +7,7 @@ Update  : 8/4/2003 - single prefix path bug fixed (Thanks to Xiaonan Wang)
 #pragma once
 #include <set>
 #include "item.h"
+#include "data.h"
 namespace fptree
 {
 	using namespace std;
@@ -40,7 +41,7 @@ namespace fptree
 		static int *remap;
 		static set<Element> *relist;
 
-	private:
+	protected:
 
 		set<Item> header;
 		set<Item> *root;
