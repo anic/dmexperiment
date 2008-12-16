@@ -23,7 +23,7 @@ TrDB::TrDB(const TrDB& trdb)
 {
 	this->m_bShadow = true;
 	this->m_bSource = false;
-	
+
 	//TODO:这里使用拷贝好吗？
 	this->m_classTable.insert(trdb.m_classTable.begin(),trdb.m_classTable.end());
 	for(ItemMap::const_iterator iter = trdb.m_itemTable.begin();
@@ -113,10 +113,17 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 	}
 	fs.close();
 
+	m_nTransactionSize = m_transactionSet.size();
 	m_nClassSize = m_classTable.size();
 	allocateCached();
 
 }
+
+void TrDB::createConditionalDB(const TrDB& parent,int nMinSupport)
+{
+	createConditionalDB(parent,ItemSet(),nMinSupport);
+}
+
 
 void TrDB::createConditionalDB(const TrDB &parent, Item prefix,int nMinSupport)
 {
@@ -233,9 +240,13 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 	*/
 
 	int nNewPrefix = prefix.size();
-	if (nNewPrefix >1 || nNewPrefix == 0)
+	if (nNewPrefix >1 )
 	{
 		throw exception("prefix must contain only 1 element.");
+	}
+	else if (nNewPrefix == 0)
+	{
+		throw exception("Not impletement yet");
 	}
 	else if (nNewPrefix == 1) //如果是添加一个新的前缀，可以利用已有的头表索引加速
 	{
@@ -292,18 +303,16 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 				delete temp;
 		}
 
-		//建立Cache
-		allocateCached();
-
-		DWORD end = GetTickCount();
-		
-		//std::cout<<"Create Prefix";
-		//for(ItemSet::const_iterator iter = m_prefix.begin();iter!=m_prefix.end();++iter)
-		//	std::cout<<*iter<<" ";
-		//std::cout<<" using:"<<(end - start)<<std::endl;
-
-		
 	}
+	//建立Cache
+	allocateCached();
+
+	DWORD end = GetTickCount();
+
+	//std::cout<<"Create Prefix";
+	//for(ItemSet::const_iterator iter = m_prefix.begin();iter!=m_prefix.end();++iter)
+	//	std::cout<<*iter<<" ";
+	//std::cout<<" using:"<<(end - start)<<std::endl;
 }
 
 const Transaction* TrDB::getTransactionByTid(int nTid) const
@@ -430,7 +439,7 @@ void TrDB::removeItem(Item item)
 	if(iterf==m_itemTable.end())
 		return;
 
-	//std::vector<Item> removedItem;
+	std::vector<Item> removedItem;
 
 	TransactionIndexList* removedTrans = iterf->second; //要移除的transacions 
 	for(ItemMap::iterator iter = m_itemTable.begin();
@@ -449,13 +458,22 @@ void TrDB::removeItem(Item item)
 		iter->second = result;
 		delete pre;
 
-		/*if (result->empty())
-			removedItem.push_back(iter->first);*/
+		int nSize = result->size();
+		if (nSize == 0|| nSize <m_nMinSupport) //不满足支持度（含空）
+			removedItem.push_back(iter->first);
 	}
 
-	//for(std::vector<Item>::const_iterator iter = removedItem.begin();
-	//	iter != removedItem.end();++iter)
-	//	m_itemTable.re);
+	for(std::vector<Item>::const_iterator iter = removedItem.begin();
+		iter != removedItem.end();++iter)
+	{
+		ItemMap::iterator iterf = m_itemTable.find(*iter);
+		if (iterf!=m_itemTable.end())
+		{
+			if(!m_bShadow)	//如果不是影子数据库，删除自己创建的TransactionList
+				delete iterf->second;
+			m_itemTable.erase(iterf); //去除空的和不满足支持度的项
+		}
+	}
 }
 
 const TransactionSet& TrDB::getTransaction() const

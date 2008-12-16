@@ -48,13 +48,19 @@ int _tmain(int argc, _TCHAR* argv[])
 	TrDB trdb;
 
 	//创建了数据库，作为测试，读取10行
-	int len = 50; 
+	int len = 10; 
 	trdb.createFromFile("mushroom.dat",len);
 
-	/*TrDB cdb1,cdb2,cdb3;
+	TrDB cdb1,cdb2,cdb3;
 	cdb1.createConditionalDB(trdb,2,3);
 	cdb2.createConditionalDB(cdb1,12,3);
-	cdb3.createConditionalDB(trdb,3,4);*/
+	cdb3.createConditionalDB(trdb,3,4);
+
+	TrDB cdb4;
+//	cdb4.createConditionalDB(trdb,2);
+//	cdb4.removeItem(2);
+	
+
 /*
 	//int added=0;
 	//clock_t start;

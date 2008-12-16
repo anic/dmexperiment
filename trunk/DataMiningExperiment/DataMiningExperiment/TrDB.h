@@ -162,6 +162,8 @@ public:
 	 */
 	void createConditionalDB(const TrDB& parent,Item prefix,int nMinSupport);
 
+	void createConditionalDB(const TrDB& parent,int nMinSupport);
+
 	void removeItem(Item item);
 
 
