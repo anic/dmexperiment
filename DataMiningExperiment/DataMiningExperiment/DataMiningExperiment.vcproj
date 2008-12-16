@@ -86,7 +86,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="COPY Resource to working directory."
-				CommandLine="xcopy mushroom.dat $(OutDir) /y"
+				CommandLine="xcopy &quot;$(ProjectDir)resource\*.*&quot; &quot;$(OutDir)&quot; /y"
 			/>
 		</Configuration>
 		<Configuration
@@ -161,6 +161,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="COPY Resources to output directory"
+				CommandLine="xcopy &quot;$(ProjectDir)resource\*.*&quot; &quot;$(OutDir)&quot; /y"
 			/>
 		</Configuration>
 	</Configurations>
@@ -238,6 +240,14 @@
 			</File>
 			<File
 				RelativePath=".\FPTreeEx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ResultWriter.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ResultWriter.h"
 				>
 			</File>
 			<File
