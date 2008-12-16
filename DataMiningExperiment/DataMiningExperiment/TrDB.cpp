@@ -15,10 +15,39 @@ TrDB::TrDB(void)
 	this->m_bSource = false;
 	this->m_pRawTrDB = NULL;
 	this->m_nTransactionSize = 0;
+	this->m_nClassSize = 0; //除了原始数据库，其他数据库的都设置成0
+	this->m_bShadow = false;
+}
+
+TrDB::TrDB(const TrDB& trdb)
+{
+	this->m_bShadow = true;
+	this->m_bSource = false;
+	
+	//TODO:这里使用拷贝好吗？
+	this->m_classTable.insert(trdb.m_classTable.begin(),trdb.m_classTable.end());
+	for(ItemMap::const_iterator iter = trdb.m_itemTable.begin();
+		iter!=trdb.m_itemTable.end();
+		iter++)
+	{
+		if (iter->second->size() >= trdb.m_nMinSupport)
+			this->m_itemTable.insert(*iter);
+	}
+	this->m_nClassSize = 0; //除了原始数据库，其他数据库的都设置成0
+	this->m_nMinSupport = trdb.m_nMinSupport;
+	this->m_nTransactionSize = trdb.m_nTransactionSize;
+	this->m_pRawTrDB = trdb.m_pRawTrDB;
+	this->m_prefix.insert(trdb.m_prefix.begin(),trdb.m_prefix.end());
+	//this->m_transactionSet 无需设置
+	allocateCached();
+
 }
 
 TrDB::~TrDB(void)
 {
+	if (m_bShadow)
+		return;
+
 	if (m_bSource)	
 	{
 		for(TransactionSet::const_iterator iter = m_transactionSet.begin();
@@ -84,6 +113,9 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 	}
 	fs.close();
 
+	m_nClassSize = m_classTable.size();
+	allocateCached();
+
 }
 
 void TrDB::createConditionalDB(const TrDB &parent, Item prefix,int nMinSupport)
@@ -102,7 +134,7 @@ bool empty(const Transaction* t) {
 
 void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMinSupport)
 {
-	//DWORD start = GetTickCount();
+	DWORD start = GetTickCount();
 	m_nMinSupport = nMinSupport;
 	m_pRawTrDB = parent.m_pRawTrDB; //获得根的TrDB
 
@@ -260,14 +292,17 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 				delete temp;
 		}
 
-		//DWORD end = GetTickCount();
+		//建立Cache
+		allocateCached();
+
+		DWORD end = GetTickCount();
 		
 		//std::cout<<"Create Prefix";
 		//for(ItemSet::const_iterator iter = m_prefix.begin();iter!=m_prefix.end();++iter)
 		//	std::cout<<*iter<<" ";
 		//std::cout<<" using:"<<(end - start)<<std::endl;
-		
 
+		
 	}
 }
 
@@ -299,6 +334,10 @@ int TrDB::getSupport(ClassLabel label) const
 
 int TrDB::getSupport(Item prefix,ClassLabel label) const
 {
+	int index = this->getCachedIndex(prefix,label);
+	if (m_cachedSupport[index]!=-1)
+		return m_cachedSupport[index];
+
 	ItemMap::const_iterator iterf = m_itemTable.find(prefix);
 	if (iterf!=m_itemTable.end())
 	{
@@ -310,10 +349,14 @@ int TrDB::getSupport(Item prefix,ClassLabel label) const
 			if (m_pRawTrDB->m_transactionSet[*iter]->label == label)
 				++result;
 		}
+		m_cachedSupport[index] = result;
 		return result;
 	}
 	else
+	{
+		m_cachedSupport[index] = 0;
 		return 0;
+	}
 
 	//ItemMap::const_iterator itemIter = m_itemTable.find(prefix);
 	//if (itemIter==m_itemTable.end())
@@ -426,4 +469,16 @@ const TransactionSet& TrDB::getTransaction() const
 int TrDB::getSize()const
 {
 	return m_nTransactionSize;
+}
+
+int TrDB::getCachedIndex(Item item,ClassLabel label) const
+{
+	int n = m_pRawTrDB->m_nClassSize;
+	return item * n + label % n;
+}
+
+void TrDB::allocateCached() const
+{
+	if (!m_itemTable.empty())
+		m_cachedSupport.assign(getCachedIndex(m_itemTable.rbegin()->first,m_pRawTrDB->m_nClassSize-1)+1,-1);
 }
