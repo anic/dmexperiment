@@ -52,6 +52,8 @@ protected:
 
 	ClassMap m_classTable;
 
+	mutable std::vector<int> m_cachedSupport;
+
 	int m_nMinSupport;
 
 	void setItemMap(Item item,int tIndex);
@@ -62,6 +64,14 @@ protected:
 
 	int m_nTransactionSize;
 	
+	int getCachedIndex(Item item,ClassLabel label) const;
+
+	void allocateCached() const;
+
+	int m_nClassSize; //除了原始数据库，其他数据库的都设置成0
+
+	bool m_bShadow; //是否是影子数据库，没有动态创建任何元素，无需析构
+
 public:
 
 	int getMinSupport() const{ return m_nMinSupport;}
@@ -157,6 +167,8 @@ public:
 
 	TrDB(void);
 	virtual ~TrDB(void);
+
+	TrDB(const TrDB& trdb);
 };
 
 

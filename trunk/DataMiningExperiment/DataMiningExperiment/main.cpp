@@ -48,7 +48,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	TrDB trdb;
 
 	//创建了数据库，作为测试，读取10行
-	int len = 9000; 
+	int len = 50; 
 	trdb.createFromFile("mushroom.dat",len);
 
 	/*TrDB cdb1,cdb2,cdb3;
@@ -162,7 +162,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	HarmonyAlgorithm har;
 
 	//output(ddp,trdb,2);
-	output(har,trdb,len/2);
+	output(har,trdb,0);
 
 	return 0;
 }
