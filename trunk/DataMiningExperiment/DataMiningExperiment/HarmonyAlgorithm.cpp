@@ -25,7 +25,7 @@ void HarmonyAlgorithm::initHCCR(const TrDB& trdb)
 {
 	for(TransactionSet::const_iterator iter = trdb.getTransaction().begin(); iter != trdb.getTransaction().end(); ++iter)
 	{	
-		HCCR hccr((*iter).id, (*iter).label);
+		HCCR hccr((*iter)->id, (*iter)->label);
 		_hccrSet.push_back(hccr);
 	}
 }
@@ -40,7 +40,7 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, ESortAlg sortAlg)
 			Rule r(m_result.size());
 			r.body = trdb.getPrefix(); //空间释放问题, to cfj:这里会拷贝一份数据
 			r.head = (*iter)._cid;			
-			r.support = trdb.getTransaction().size();
+			r.support = trdb.getSize(); //修改为get size
 			if(r.support > 0)
 			{
 				//pending
@@ -57,12 +57,12 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, ESortAlg sortAlg)
 	}
 	//
 	//prune support_equivalence
-	int supP = trdb.getTransaction().size();
+	int supP = trdb.getSize(); //修改为get size
 	ItemMap itTable = trdb.getItemTable();		
 	//debugging
 	for(ItemMap::iterator it = itTable.begin(); it!= itTable.end();)
 	{
-		if(it->second.size() == supP)
+		if(it->second->size() == supP)
 		{
 			itTable.erase(it++);
 		}
@@ -72,8 +72,8 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, ESortAlg sortAlg)
 	//prune unpromising 
 	for(ItemMap::iterator iter = itTable.begin(); iter!= itTable.end(); iter )
 	{
-		TransactionIndexList::iterator it = iter->second.begin();
-		for( ; it!= iter->second.end(); ++it)
+		TransactionIndexList::iterator it = iter->second->begin();
+		for( ; it!= iter->second->end(); ++it)
 		{
 			//int tid = iter->second.at(it);
 			double upSupPx = trdb.getSupport(iter->first,_hccrSet[*it]._cid);
@@ -83,7 +83,7 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, ESortAlg sortAlg)
 			if(_hccrSet[*it]._hConf < upSupPx)
 				break;					
 		}
-		if( it == iter->second.end())
+		if( it == iter->second->end())
 		{
 			itTable.erase(iter++);			
 		}
@@ -101,8 +101,9 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, ESortAlg sortAlg)
 			upSupP = upSupP/min_sup;
 			if(upSupP > 1)
 				upSupP = 1;
-			TransactionIndexList::const_iterator it = iter->second.begin();
-			for(; it != iter->second.end(); ++it)
+			
+			for(TransactionIndexList::const_iterator it = iter->second->begin()
+				; it != iter->second->end(); ++it)
 			{
 				//int tid = iter->second.at(it);
 				if(_hccrSet[*it]._hConf < upSupP)
@@ -155,7 +156,7 @@ bool HarmonyAlgorithm::setItCRTalbeMCD(const TrDB& trdb, ItemMap& itTable,ItemCR
 	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); iter++)
 	{			
 		double maxProC= 0.0;
-		int supPx =iter->second.size();
+		int supPx =iter->second->size();
 		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic != trdb.getClassTable().end(); ic++)
 		{			
 			double supPxC = trdb.getSupport(iter->first, ic->first);
@@ -174,7 +175,7 @@ bool HarmonyAlgorithm::setItCRTalbeEA(const TrDB& trdb, ItemMap& itTable,ItemCRT
 	double entropy = 0.0;
 	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); iter++)
 	{		
-		int supPx =iter->second.size();
+		int supPx =iter->second->size();
 		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic != trdb.getClassTable().end(); ++ic)
 		{			
 			double supPxC = trdb.getSupport(iter->first, ic->first);
@@ -193,11 +194,11 @@ bool HarmonyAlgorithm::setItCRTalbeCRA(const TrDB& trdb, ItemMap& itTable,ItemCR
 	int k =trdb.getClassTable().size();
 	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); iter++)
 	{		
-		mean_supPx = (iter->second.size() +0.0)/k;
+		mean_supPx = (iter->second->size() +0.0)/k;
 		int supPC = 0;
 		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic != trdb.getClassTable().end(); ++ic)
 		{			
-			supPC += ic->second.size();			
+			supPC += ic->second->size();			
 		}
 		mean_supP = (supPC+0.0)/k;
 
@@ -207,7 +208,7 @@ bool HarmonyAlgorithm::setItCRTalbeCRA(const TrDB& trdb, ItemMap& itTable,ItemCR
 		double sigmaPx = 0.0;
 		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic != trdb.getClassTable().end(); ++ic)
 		{			
-			supPC = ic->second.size();
+			supPC = ic->second->size();
 			supPxC = trdb.getSupport(iter->first, ic->first);
 			temp += (supPC*supPxC - mean_supP*mean_supPx);
 			temp2 += supPxC*supPxC;

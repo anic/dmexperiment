@@ -40,6 +40,11 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//创建了数据库，作为测试，读取10行
 	trdb.createFromFile("mushroom.dat",10);
+
+	TrDB cdb1,cdb2,cdb3;
+	cdb1.createConditionalDB(trdb,2,3);
+	cdb2.createConditionalDB(cdb1,12,3);
+	cdb3.createConditionalDB(trdb,3,4);
 /*
 	//int added=0;
 	//clock_t start;
