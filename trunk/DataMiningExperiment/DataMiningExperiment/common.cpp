@@ -6,7 +6,7 @@
 using namespace std;
 
 bool set_contain(const ItemSet& subSet,const ItemSet& superSet)
-{
+{ 
 	ItemSet temp;
 		::set_difference(subSet.begin(),
 			subSet.end(),
