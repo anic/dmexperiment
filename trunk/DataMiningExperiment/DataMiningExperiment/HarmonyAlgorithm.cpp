@@ -34,12 +34,12 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, ESortAlg sortAlg)
 	if(!(trdb.getPrefix().empty()))	
 	{
 		//reset HCCCR of each transaction
-		for(HCCRSet::iterator iter = _hccrSet.begin(); iter != _hccrSet.end(); ++iter)
+		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic!=trdb.getClassTable().end();++ic)
 		{
 			//create a new rule
 			Rule r(m_result.size());
 			r.body = trdb.getPrefix(); //空间释放问题, to cfj:这里会拷贝一份数据
-			r.head = (*iter)._cid;			
+			r.head = (*ic).first;
 			r.support = trdb.getSize(); //修改为get size
 			if(r.support > 0)
 			{
@@ -47,11 +47,19 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, ESortAlg sortAlg)
 				double conf = (trdb.getSupport(r.head) + 0.0)/r.support;
 				r.confidence = conf;			
 			}			
-			if((*iter)._hConf < r.confidence)
+			bool isNewRule = true;
+			for(TransactionIndexList::const_iterator tid = (*ic).second->begin(); tid != (*ic).second->end(); ++tid)
 			{
-				m_result.push_back(r);
-				(*iter)._rid = r.id;
-				(*iter)._hConf = r.confidence;
+				if(_hccrSet[*tid]._hConf < r.confidence)
+				{
+					if(isNewRule)
+					{
+						m_result.push_back(r);
+						isNewRule = false;
+					}
+					_hccrSet[*tid]._hConf = r.confidence;
+					_hccrSet[*tid]._rid = r.id;
+				}
 			}
 		}
 	}
