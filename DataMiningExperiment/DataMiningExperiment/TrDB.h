@@ -74,6 +74,8 @@ protected:
 
 public:
 
+	void setMinSupport(int nMinSupport);
+
 	int getMinSupport() const{ return m_nMinSupport;}
 
 	const TransactionIndexList* getTransactionsByClass(ClassLabel label)const;
@@ -162,7 +164,7 @@ public:
 	 */
 	void createConditionalDB(const TrDB& parent,Item prefix,int nMinSupport);
 
-	void createConditionalDB(const TrDB& parent,int nMinSupport);
+	
 
 	void removeItem(Item item);
 
