@@ -119,11 +119,11 @@ void FPTreeEx::createFromTrDB(const TrDB& trdb,int nMinSupport)
 		++iter)
 	{
 
-		fptree::Transaction *t = new fptree::Transaction(iter->items.size());
+		fptree::Transaction *t = new fptree::Transaction((*iter)->items.size());
 
 		int i=0;
-		for(ItemSet::const_iterator it = iter->items.begin();
-			it !=iter->items.end();++it,++i)
+		for(ItemSet::const_iterator it = (*iter)->items.begin();
+			it !=(*iter)->items.end();++it,++i)
 			t->t[i] = *it;
 
 		if(t->length) {
@@ -143,10 +143,10 @@ void FPTreeEx::createFromTrDB(const TrDB& trdb,int nMinSupport)
 		iter!=data.end();
 		++iter)
 	{
-		fptree::Transaction *t = new fptree::Transaction(iter->items.size());
+		fptree::Transaction *t = new fptree::Transaction((*iter)->items.size());
 		int i=0;
-		for(ItemSet::const_iterator it = iter->items.begin();
-			it !=iter->items.end();++it,++i)
+		for(ItemSet::const_iterator it = (*iter)->items.begin();
+			it !=(*iter)->items.end();++it,++i)
 			t->t[i] = *it;
 
 

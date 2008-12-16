@@ -8,10 +8,10 @@
 #include "Transaction.h"
 
 
-typedef std::vector<Transaction> TransactionSet;
-typedef std::vector<int> TransactionIndexList; //记录TransactionSet中的Id号
-typedef std::map<Item,TransactionIndexList> ItemMap;
-typedef std::map<ClassLabel,TransactionIndexList> ClassMap;
+typedef std::vector<Transaction*> TransactionSet;
+typedef std::set<int> TransactionIndexList; //记录RawTrDB的TransactionSet中的下标号
+typedef std::map<Item,TransactionIndexList*> ItemMap;
+typedef std::map<ClassLabel,TransactionIndexList*> ClassMap;
 
 /*!
  * \brief
@@ -32,6 +32,7 @@ protected:
 	 */
 	TransactionSet m_transactionSet;
 
+	TrDB * m_pRawTrDB;
 	
 	/*!
 	 * \brief
@@ -56,6 +57,10 @@ protected:
 	void setItemMap(Item item,int tIndex);
 
 	void setClassMap(ClassLabel label,int tIndex);
+
+	bool m_bSource; //是否是源
+
+	int m_nTransactionSize;
 	
 public:
 
@@ -68,13 +73,10 @@ public:
 	//如果只有一个Item，用这个方法效率比较高
 	int getSupport(Item prefix,ClassLabel label) const;
 
-	//这个方法效率低，慎用
-	int getSupport(const ItemSet& prefix,ClassLabel label) const ;
-
 	//返回对应Label的支持度
 	int getSupport(ClassLabel label) const;
 
-	int getSize()const{return m_transactionSet.size(); }
+	int getSize()const;
 
 	//返回Tid的事务，注意此方法效率较低，能不用不用
 	//如果没有找到，返回id为-1的事务
@@ -88,7 +90,7 @@ public:
 	 * 获得事务集
 	 * 
 	 */
-	const TransactionSet& getTransaction() const{return m_transactionSet;}
+	const TransactionSet& getTransaction() const;
 	
 	/*!
 	 * \brief
