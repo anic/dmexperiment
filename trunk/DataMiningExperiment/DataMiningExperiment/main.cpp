@@ -48,8 +48,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	TrDB trdb;
 
 	//创建了数据库，作为测试，读取10行
-	int len = 10; 
+	int len = 10;
+	int minsup = 2;
 	trdb.createFromFile("mushroom.dat",len);
+	trdb.setMinSupport(minsup);
 
 	TrDB cdb1,cdb2,cdb3;
 	cdb1.createConditionalDB(trdb,2,3);
@@ -57,8 +59,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	cdb3.createConditionalDB(trdb,3,4);
 
 	TrDB cdb4;
-//	cdb4.createConditionalDB(trdb,2);
-//	cdb4.removeItem(2);
+	cdb4.createConditionalDB(trdb,3,2);
+	cdb4.removeItem(2);
 	
 
 /*
@@ -168,7 +170,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	HarmonyAlgorithm har;
 
 	//output(ddp,trdb,2);
-	output(har,trdb,0);
+	output(har,trdb,minsup);
 
 	return 0;
 }

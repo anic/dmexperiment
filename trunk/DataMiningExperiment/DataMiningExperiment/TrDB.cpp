@@ -26,13 +26,7 @@ TrDB::TrDB(const TrDB& trdb)
 
 	//TODO:这里使用拷贝好吗？
 	this->m_classTable.insert(trdb.m_classTable.begin(),trdb.m_classTable.end());
-	for(ItemMap::const_iterator iter = trdb.m_itemTable.begin();
-		iter!=trdb.m_itemTable.end();
-		iter++)
-	{
-		if (iter->second->size() >= trdb.m_nMinSupport)
-			this->m_itemTable.insert(*iter);
-	}
+	this->m_itemTable.insert(trdb.m_itemTable.begin(),trdb.m_itemTable.end());
 	this->m_nClassSize = 0; //除了原始数据库，其他数据库的都设置成0
 	this->m_nMinSupport = trdb.m_nMinSupport;
 	this->m_nTransactionSize = trdb.m_nTransactionSize;
@@ -117,11 +111,6 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 	m_nClassSize = m_classTable.size();
 	allocateCached();
 
-}
-
-void TrDB::createConditionalDB(const TrDB& parent,int nMinSupport)
-{
-	createConditionalDB(parent,ItemSet(),nMinSupport);
 }
 
 
@@ -240,13 +229,9 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 	*/
 
 	int nNewPrefix = prefix.size();
-	if (nNewPrefix >1 )
+	if (nNewPrefix >1 ||nNewPrefix == 0)
 	{
 		throw exception("prefix must contain only 1 element.");
-	}
-	else if (nNewPrefix == 0)
-	{
-		throw exception("Not impletement yet");
 	}
 	else if (nNewPrefix == 1) //如果是添加一个新的前缀，可以利用已有的头表索引加速
 	{
@@ -444,8 +429,14 @@ void TrDB::removeItem(Item item)
 	TransactionIndexList* removedTrans = iterf->second; //要移除的transacions 
 	for(ItemMap::iterator iter = m_itemTable.begin();
 		iter!=m_itemTable.end();
-		)
+		++iter)
 	{
+		if (iterf == iter)
+		{
+			removedItem.push_back(iter->first);
+			continue;
+		}
+
 		TransactionIndexList* result = new TransactionIndexList();
 		TransactionIndexList* pre = iter->second;
 
@@ -459,8 +450,39 @@ void TrDB::removeItem(Item item)
 		delete pre;
 
 		int nSize = result->size();
-		if (nSize == 0|| nSize <m_nMinSupport) //不满足支持度（含空）
+		if (nSize == 0 || nSize <m_nMinSupport) //不满足支持度（含空）
+		{
 			removedItem.push_back(iter->first);
+			//TODO:这里有问题
+			/*if (nSize > 0)
+				removedTrans->insert(result->begin(),result->end()); //添加新删除的项
+				*/
+		}
+	}
+
+	m_nTransactionSize -= removedTrans->size(); //删去多少个事务
+
+	for(ClassMap::iterator iter = m_classTable.begin();	iter!=m_classTable.end(); )
+	{
+		TransactionIndexList* result = new TransactionIndexList();
+		TransactionIndexList* pre = iter->second;
+
+		std::set_difference(pre->begin(),
+			pre->end(),
+			removedTrans->begin(),
+			removedTrans->end(),
+			std::insert_iterator<TransactionIndexList>(*result, result->begin() ));
+		delete pre;
+
+		if (result->size()==0)
+		{
+			m_classTable.erase(iter++);
+		}
+		else
+		{
+			iter->second = result;
+			++iter;
+		}
 	}
 
 	for(std::vector<Item>::const_iterator iter = removedItem.begin();
@@ -499,4 +521,32 @@ void TrDB::allocateCached() const
 {
 	if (!m_itemTable.empty())
 		m_cachedSupport.assign(getCachedIndex(m_itemTable.rbegin()->first,m_pRawTrDB->m_nClassSize-1)+1,-1);
+}
+
+void TrDB::setMinSupport(int nMinSupport)
+{
+	if(!m_bSource)
+		throw exception("Only Source DB can invoke this method.");
+
+	this->m_nMinSupport = nMinSupport;
+
+	for(ItemMap::iterator iter = m_itemTable.begin();
+		iter!=m_itemTable.end();)
+	{
+
+		if (iter->second->size() < nMinSupport) //小于最小支持度
+		{
+			for(TransactionIndexList::iterator transIter = iter->second->begin();
+				transIter!=iter->second->end();
+				++transIter)
+			{
+				m_transactionSet[*transIter]->items.erase(iter->first); //从事务中删除该项，但没有彻底删除事务
+				//所以classTable没有变化	
+			}
+			m_itemTable.erase(iter++);
+		}
+		else
+			++iter;
+	}
+
 }
