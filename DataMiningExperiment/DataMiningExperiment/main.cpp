@@ -17,34 +17,44 @@ using namespace std;
 #include "HarmonyAlgorithm.h"
 #include "DMAlgorithm.h"
 #include "FPTreeEx.h"
-
+#include <windows.h>
 void output(DMAlgorithm& algorithm,const TrDB& trdb,int nMinSupport)
 {
+	DWORD start = GetTickCount();
 	if(algorithm.execute(trdb,nMinSupport)) //运行算法
 	{
+		DWORD end = GetTickCount();
+		std::cout<<"Algorithm executes "<<(end - start)<<"ms"<<std::endl;
 		const Result& result = algorithm.getResult();
 		//遍历结果
 		for(Result::const_iterator iter = result.begin();
 			iter!=result.end();++iter)
-		{
-			std::cout<<(*iter).id<<std::endl;
+		{ 
+			std::cout<<(*iter).id<<":";
+			for(ItemSet::const_iterator ibody = iter->body.begin();
+				ibody !=iter->body.end();
+				++ibody)
+				std::cout<<*ibody<<" ";
+
+			cout<<"("<<(iter->support)<<") ["<<(iter->head)<<"]"<<endl;
 		}
-	}
+	} 
 }
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 
-	//测试一下修改 ,提交    
+	//测试一下修改 ,提交     
 	TrDB trdb;
 
 	//创建了数据库，作为测试，读取10行
-	trdb.createFromFile("mushroom.dat",10);
+	int len = 9000; 
+	trdb.createFromFile("mushroom.dat",len);
 
-	TrDB cdb1,cdb2,cdb3;
+	/*TrDB cdb1,cdb2,cdb3;
 	cdb1.createConditionalDB(trdb,2,3);
 	cdb2.createConditionalDB(cdb1,12,3);
-	cdb3.createConditionalDB(trdb,3,4);
+	cdb3.createConditionalDB(trdb,3,4);*/
 /*
 	//int added=0;
 	//clock_t start;
@@ -152,7 +162,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	HarmonyAlgorithm har;
 
 	//output(ddp,trdb,2);
-	output(har,trdb,7);
+	output(har,trdb,len/2);
 
 	return 0;
 }

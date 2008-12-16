@@ -38,21 +38,22 @@ typedef struct _RULE
 	int id;				//规则的序号
 	ItemSet body;		//规则的头，也就是
 	ClassLabel head;	//分类标签
-	double support;		//支持度
+	int support;		//支持度
 	double confidence;	//可信度
 
 public:
 	_RULE(int nId){
 		id = nId;
 		head = 0;
-		support = 0.0;
+		support = 0;
 		confidence = 0.0;
 	}
 
 	_RULE(){
 		id = 0;
 		head = 0;
-		support = confidence = 0.0;
+		support = 0;
+		confidence = 0.0;
 
 	}
 }Rule;

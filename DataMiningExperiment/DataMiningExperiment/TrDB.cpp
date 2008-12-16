@@ -102,7 +102,7 @@ bool empty(const Transaction* t) {
 
 void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMinSupport)
 {
-
+	//DWORD start = GetTickCount();
 	m_nMinSupport = nMinSupport;
 	m_pRawTrDB = parent.m_pRawTrDB; //获得根的TrDB
 
@@ -260,7 +260,13 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 				delete temp;
 		}
 
-
+		//DWORD end = GetTickCount();
+		
+		//std::cout<<"Create Prefix";
+		//for(ItemSet::const_iterator iter = m_prefix.begin();iter!=m_prefix.end();++iter)
+		//	std::cout<<*iter<<" ";
+		//std::cout<<" using:"<<(end - start)<<std::endl;
+		
 
 	}
 }
@@ -301,20 +307,30 @@ int TrDB::getSupport(Item prefix,ClassLabel label) const
 			iter!=iterf->second->end();
 			++iter)
 		{
-			if (m_bSource)
-			{
-				if (m_transactionSet[*iter]->label == label)
-					++result;
-			}
-			else if (m_pRawTrDB->m_transactionSet[*iter]->label == label)
-			{
+			if (m_pRawTrDB->m_transactionSet[*iter]->label == label)
 				++result;
-			}
 		}
 		return result;
 	}
 	else
 		return 0;
+
+	//ItemMap::const_iterator itemIter = m_itemTable.find(prefix);
+	//if (itemIter==m_itemTable.end())
+	//	return 0;
+
+	//ItemMap::const_iterator classIter = m_classTable.find(label);
+	//if (classIter == m_classTable.end())
+	//	return 0;
+
+	//TransactionIndexList temp;
+	//std::set_intersection(itemIter->second->begin(),
+	//	itemIter->second->end(),
+	//	classIter->second->begin(),
+	//	classIter->second->end(),
+	//	std::insert_iterator<TransactionIndexList>(temp, temp.begin() ));
+
+	//return temp.size();
 }
 
 
