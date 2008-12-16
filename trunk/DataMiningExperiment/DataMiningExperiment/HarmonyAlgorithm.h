@@ -99,14 +99,17 @@ public:
 	bool execute(const TrDB& trdb,int nSupport);
 
 private:
-	void ruleminer(const TrDB& trdb,int nSupport,ESortAlg sortAlg);
+	void ruleminer(const TrDB& trdb,int nSupport,std::map<Item,bool>& minedItemMap, ESortAlg sortAlg);
 	bool setItCRTalbeCRA(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable);
 	bool setItCRTalbeEA(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable);
 	bool setItCRTalbeMCD(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable);
 	void initHCCR(const TrDB& trdb);
+	void cleanResult();
 private :
 	HCCRSet _hccrSet; 
 	
+	
+
 };
 
 

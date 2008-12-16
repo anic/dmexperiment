@@ -4,7 +4,7 @@
                                              
 #include "StdAfx.h"
 #include "HarmonyAlgorithm.h"
-
+#include <iostream>
 
 HarmonyAlgorithm::HarmonyAlgorithm(void)
 {
@@ -18,18 +18,37 @@ bool HarmonyAlgorithm::execute(const TrDB& trdb,int nSupport)
 {
 	//算法结果放在m_result中
 	initHCCR(trdb);
-	ruleminer(trdb,nSupport,CRA);
+	std::map<Item,bool> minedItemMap;
+	ruleminer(trdb,nSupport,minedItemMap,CRA);
+	cleanResult();
 	return true;
+}
+void HarmonyAlgorithm::cleanResult()
+{
+	//to cya: 帮忙看看这个删除有什么问题，想把ir->numUsed <=0都删除。似乎ir会在erase之后连跳两个	
+	Result::iterator ir = m_result.begin();
+	while(ir!=m_result.end())
+	{
+		if(ir->numUsed <= 0)
+		{
+			ir->id = -1;
+			ir++;
+			//m_result.erase(ir++);
+		}
+		else
+			++ir;
+	}
 }
 void HarmonyAlgorithm::initHCCR(const TrDB& trdb)
 {
+	_hccrSet.reserve(trdb.getSize());
 	for(TransactionSet::const_iterator iter = trdb.getTransaction().begin(); iter != trdb.getTransaction().end(); ++iter)
 	{	
 		HCCR hccr((*iter)->id, (*iter)->label);
 		_hccrSet.push_back(hccr);
 	}
 }
-void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, ESortAlg sortAlg)
+void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, std::map<Item,bool>& minedItemMap, ESortAlg sortAlg)
 {
 	if(!(trdb.getPrefix().empty()))	
 	{
@@ -40,45 +59,73 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, ESortAlg sortAlg)
 			Rule r(m_result.size());
 			r.body = trdb.getPrefix(); //空间释放问题, to cfj:这里会拷贝一份数据
 			r.head = (*ic).first;
-			r.support = trdb.getSize(); //修改为get size
+			r.support = trdb.getSupport(r.head); //修改为get size
 			if(r.support > 0)
-			{
-				//pending
-				double conf = (trdb.getSupport(r.head) + 0.0)/r.support;
-				r.confidence = conf;			
+			{				
+				double conf = (r.support + 0.0)/trdb.getSize();
+				r.confidence = conf;	
 			}			
 			bool isNewRule = true;
 			for(TransactionIndexList::const_iterator tid = (*ic).second->begin(); tid != (*ic).second->end(); ++tid)
 			{
 				if(_hccrSet[*tid]._hConf < r.confidence)
-				{
+				{					
+					int oldRid = _hccrSet[*tid]._rid;
+					if( oldRid >=0 && oldRid < m_result.size())
+					{
+						m_result.at(oldRid).numUsed --;
+					}
+					_hccrSet[*tid]._hConf = r.confidence;
+					_hccrSet[*tid]._rid = r.id;					
 					if(isNewRule)
 					{
+						r.numUsed++;
 						m_result.push_back(r);
 						isNewRule = false;
 					}
-					_hccrSet[*tid]._hConf = r.confidence;
-					_hccrSet[*tid]._rid = r.id;
+					else
+					{
+						m_result.at(r.id).numUsed ++;
+					}
 				}
 			}
 		}
 	}
-	//
+	
+	
+	ItemMap itTable = trdb.getItemTable();	//效率比较低
+
+
+	//prune already mined items
+	//std::map<Item,bool> minedItemMap;
+	if(!minedItemMap.empty())
+	{
+		for(ItemMap::iterator iter = itTable.begin(); iter!= itTable.end();)
+		{
+			std::map<Item,bool>::const_iterator  it= minedItemMap.find(iter->first);
+			if( it != minedItemMap.end())
+			{
+				itTable.erase(iter++);
+			}
+			else 
+				++iter;
+		}
+	}
+	
+
 	//prune support_equivalence
 	int supP = trdb.getSize(); //修改为get size
-	ItemMap itTable = trdb.getItemTable();		
-	//debugging
-	for(ItemMap::iterator it = itTable.begin(); it!= itTable.end();)
+	for(ItemMap::iterator iter = itTable.begin(); iter!= itTable.end();)
 	{
-		if(it->second->size() == supP)
+		if(iter->second->size() == supP)
 		{
-			itTable.erase(it++);
+			itTable.erase(iter++);
 		}
 		else 
-			++it;
+			++iter;
 	}
 	//prune unpromising 
-	for(ItemMap::iterator iter = itTable.begin(); iter!= itTable.end(); iter )
+	for(ItemMap::iterator iter = itTable.begin(); iter!= itTable.end(); )
 	{
 		TransactionIndexList::iterator it = iter->second->begin();
 		for( ; it!= iter->second->end(); ++it)
@@ -151,11 +198,20 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, ESortAlg sortAlg)
 		sort(test.begin(),test.end(), ItemCRCompare());*/
 
 		sort(itCRTable.begin(),itCRTable.end(), ItemCRCompare());  
+		std::map<Item,bool> newMinedItemMap;
 		for(ItemCRTable::iterator it =  itCRTable.begin(); it!= itCRTable.end(); it++)
-		{
+		{			
+			
 			TrDB cdb;
-			cdb.createConditionalDB(trdb, it->first, min_sup);
-			ruleminer(cdb, min_sup,sortAlg);
+			cdb.createConditionalDB(trdb, it->first, min_sup);			
+			ruleminer(cdb, min_sup, newMinedItemMap, sortAlg);	
+			newMinedItemMap.insert(::make_pair(it->first, true));
+			
+			std::cout<<"projecting db ";
+			for(ItemSet::const_iterator ip = cdb.getPrefix().begin(); ip != cdb.getPrefix().end(); ++ip)
+				std::cout<<*ip<<" ";
+			std::cout<<std::endl;
+			
 		}
 	}
 }
