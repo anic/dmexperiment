@@ -541,12 +541,26 @@ void TrDB::setMinSupport(int nMinSupport)
 				++transIter)
 			{
 				m_transactionSet[*transIter]->items.erase(iter->first); //从事务中删除该项，但没有彻底删除事务
-				//所以classTable没有变化	
+				//所以classTable没有变化
+				if (m_transactionSet[*transIter]->items.empty()) //如果某一个事务的所有项已经被删除，则从classtable中清除
+				{
+					ItemMap::iterator iterf = m_classTable.find(m_transactionSet[*transIter]->label);
+					if (iterf!= m_classTable.end())
+						iterf->second->erase(*transIter);
+				}
 			}
 			m_itemTable.erase(iter++);
 		}
 		else
 			++iter;
+	}
+
+	m_nTransactionSize = 0;
+	for(ClassMap::const_iterator iter = m_classTable.begin();
+		iter!=m_classTable.end();
+		++iter)
+	{
+		m_nTransactionSize += iter->second->size();
 	}
 
 }

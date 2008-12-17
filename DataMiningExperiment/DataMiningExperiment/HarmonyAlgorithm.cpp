@@ -206,11 +206,12 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, std::map<Item,boo
 			cdb.createConditionalDB(trdb, it->first, min_sup);			
 			ruleminer(cdb, min_sup, newMinedItemMap, sortAlg);	
 			newMinedItemMap.insert(::make_pair(it->first, true));
-			
+#ifdef _DEBUG
 			std::cout<<"projecting db ";
 			for(ItemSet::const_iterator ip = cdb.getPrefix().begin(); ip != cdb.getPrefix().end(); ++ip)
 				std::cout<<*ip<<" ";
 			std::cout<<std::endl;
+#endif
 			
 		}
 	}
