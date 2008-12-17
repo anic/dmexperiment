@@ -30,6 +30,9 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,int nMinSupport)
 		for(Result::const_iterator iter = result.begin();
 			iter!=result.end();++iter)
 		{ 
+			if (iter->id <0 )
+				continue;
+
 			std::cout<<(*iter).id<<":";
 			for(ItemSet::const_iterator ibody = iter->body.begin();
 				ibody !=iter->body.end();
@@ -48,20 +51,20 @@ int _tmain(int argc, _TCHAR* argv[])
 	TrDB trdb;
 
 	//创建了数据库，作为测试，读取10行
-	int len = 10;
-	int minsup = 2;
+	int len = 9000;
+	int minsup = len/2;
 	trdb.createFromFile("mushroom.dat",len);
 	trdb.setMinSupport(minsup);
 
-	TrDB cdb1,cdb2,cdb3;
-	cdb1.createConditionalDB(trdb,2,3);
-	cdb2.createConditionalDB(cdb1,12,3);
-	cdb3.createConditionalDB(trdb,3,4);
+	//TrDB cdb1,cdb2,cdb3;
+	//cdb1.createConditionalDB(trdb,2,3);
+	//cdb2.createConditionalDB(cdb1,12,3);
+	//cdb3.createConditionalDB(trdb,3,4);
 
-	TrDB cdb4;
-	cdb4.createConditionalDB(trdb,3,2);
-	cdb4.removeItem(2);
-	
+	//TrDB cdb4;
+	//cdb4.createConditionalDB(trdb,3,2);
+	//cdb4.removeItem(2);
+	//
 
 /*
 	//int added=0;
