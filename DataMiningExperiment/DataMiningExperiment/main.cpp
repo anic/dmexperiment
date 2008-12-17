@@ -39,7 +39,7 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,int nMinSupport)
 				++ibody)
 				std::cout<<*ibody<<" ";
 
-			cout<<"("<<(iter->support)<<") ["<<(iter->head)<<"]"<<endl;
+			cout<<"("<<(iter->confidence)<<") ["<<(iter->head)<<"]"<<endl;
 		}
 	} 
 }
@@ -52,7 +52,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//创建了数据库，作为测试，读取10行
 	int len = 10;
-	int minsup = 2;
+	int minsup = len/2;
 	trdb.createFromFile("mushroom.dat",len);
 	trdb.setMinSupport(minsup);
 	
@@ -63,7 +63,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	FPTreeEx cfpt;
 	cfpt.createConditionalFPTree(fptree,33,minsup);
 	cfpt.printOnConsole();
-
 	TrDB cdb1;
 	cdb1.createConditionalDB(trdb,33,minsup);
 
