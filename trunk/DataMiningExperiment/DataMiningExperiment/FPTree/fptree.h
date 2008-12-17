@@ -39,6 +39,7 @@ namespace fptree
 		void print(int *itemset, int il, int *comb, int cl, int support, int spos=0, int depth=0, int *current=0);
 
 		static int *remap;
+		static int len_remap; //new added
 		static set<Element> *relist;
 
 	protected:

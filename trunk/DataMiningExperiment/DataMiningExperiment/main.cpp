@@ -51,10 +51,21 @@ int _tmain(int argc, _TCHAR* argv[])
 	TrDB trdb;
 
 	//创建了数据库，作为测试，读取10行
-	int len = 9000;
-	int minsup = len/2;
+	int len = 10;
+	int minsup = 2;
 	trdb.createFromFile("mushroom.dat",len);
 	trdb.setMinSupport(minsup);
+	
+	FPTreeEx fptree;
+	fptree.createFromTrDB(trdb,minsup);
+	fptree.printOnConsole();
+
+	FPTreeEx cfpt;
+	cfpt.createConditionalFPTree(fptree,33,minsup);
+	cfpt.printOnConsole();
+
+	TrDB cdb1;
+	cdb1.createConditionalDB(trdb,33,minsup);
 
 	//TrDB cdb1,cdb2,cdb3;
 	//cdb1.createConditionalDB(trdb,2,3);

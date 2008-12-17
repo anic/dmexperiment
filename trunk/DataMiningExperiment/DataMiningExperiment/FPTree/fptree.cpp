@@ -16,6 +16,7 @@ namespace fptree
 {
 	int *FPtree::remap = 0;
 	set<Element> *FPtree::relist = 0;
+	int FPtree::len_remap = 0;
 
 	FPtree::FPtree()
 	{
@@ -172,8 +173,11 @@ namespace fptree
 		//将小于支持度的头表项删除
 		for(set<Item>::iterator it = header.begin();it != header.end(); ) {
 			if(it->getSupport() < minsup) {
-				set<Item>::iterator tmp = it++;
-				header.erase(tmp);
+				/*set<Item>::iterator tmp = it++;
+				header.erase(tmp);*/
+
+				//modify 
+				header.erase(it++);
 			}
 			else {
 				++left;
@@ -192,7 +196,9 @@ namespace fptree
 		for(itI = header.begin(); itI != header.end(); itI++)
 			list.insert(Element(itI->getSupport(), itI->getId()));
 
-		remap = new int[list.size()+1];
+		len_remap = list.size()+1; //new added
+		remap = new int[len_remap];
+		
 
 		if(relist!=NULL)
 			delete relist;
