@@ -130,103 +130,13 @@ bool empty(const Transaction* t) {
 
 void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMinSupport)
 {
-	DWORD start = GetTickCount();
+	//DWORD start = GetTickCount();
 	m_nMinSupport = nMinSupport;
 	m_pRawTrDB = parent.m_pRawTrDB; //获得根的TrDB
 
 	//将前缀放入
 	this->m_prefix.insert(parent.m_prefix.begin(),parent.m_prefix.end());
 	this->m_prefix.insert(prefix.begin(),prefix.end());
-	/* //旧代码
-	int nNewPrefix = prefix.size();
-	if (nNewPrefix >1 || nNewPrefix == 0)
-	{
-	const TransactionSet& transactions = parent.getTransaction();
-	for(TransactionSet::const_iterator iter = transactions.begin();
-	iter!=transactions.end();++iter)
-	{
-	if (set_contain(m_prefix,(*iter)->items)) //事务包含新的前缀，则插入到投影数据库
-	m_transactionSet.push_back(*iter);
-	}
-	}
-	else if (nNewPrefix == 1) //如果是添加一个新的前缀，可以利用已有的头表索引加速
-	{
-	ItemMap::const_iterator iter = parent.m_itemTable.find(*prefix.begin());
-	for(TransactionIndexList::const_iterator iter2 = iter->second.begin();
-	iter2!=iter->second.end();
-	++iter2)
-	{
-	//插入数据的指针
-	m_transactionSet.push_back(parent.m_transactionSet[*iter2]);
-	}
-	}
-
-	//计算支持度
-	map<Item,int> header;
-	for(TransactionSet::iterator iter = m_transactionSet.begin();
-	iter != m_transactionSet.end();++iter)
-	{
-	for(ItemSet::iterator inner = (*iter)->items.begin();
-	inner != (*iter)->items.end();
-	++inner)
-	{
-	map<Item,int>::iterator iterf = header.find(*inner);
-	if (iterf == header.end()) //没有之前的
-	header.insert(::make_pair(*inner,1));
-	else
-	iterf->second++;
-	}
-	}
-
-	//挑出不满足支持度的Item
-	ItemSet unsupported;
-	for(map<Item,int>::iterator iter = header.begin();
-	iter !=header.end();++iter)
-	{
-	if (iter->second < nMinSupport)
-	unsupported.insert(iter->first);
-	}
-	unsupported.insert(m_prefix.begin(),m_prefix.end()); //前缀也要去除
-
-	//去除不满足支持度的项
-	if(!unsupported.empty())
-	{
-	for(TransactionSet::iterator iter = m_transactionSet.begin();
-	iter != m_transactionSet.end();++iter)
-	{
-	ItemSet removed;
-
-	//求集合差
-	::set_difference(
-	(*iter)->items.begin(),
-	(*iter)->items.end(),
-	unsupported.begin(),
-	unsupported.end(),
-	std::insert_iterator<ItemSet>(removed, removed.begin() ));
-
-	(*iter)->items.swap(removed);
-	}
-
-	//去除空的事务
-	TransactionSet::iterator i = remove_if(m_transactionSet.begin(),m_transactionSet.end(),empty);
-	m_transactionSet.erase(i, m_transactionSet.end());
-
-
-	//索引新的Item列表
-	for(TransactionSet::iterator iter = m_transactionSet.begin();
-	iter != m_transactionSet.end();++iter)
-	{
-	for(ItemSet::iterator inner = (*iter)->items.begin();
-	inner!=(*iter)->items.end();
-	++inner)
-	{
-	setItemMap(*inner,iter - m_transactionSet.begin());
-	}
-
-	setClassMap((*iter)->label,iter - m_transactionSet.begin());
-	}
-	}
-	*/
 
 	int nNewPrefix = prefix.size();
 	if (nNewPrefix >1 ||nNewPrefix == 0)
@@ -292,7 +202,7 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 	//建立Cache
 	allocateCached();
 
-	DWORD end = GetTickCount();
+	//DWORD end = GetTickCount();
 
 	//std::cout<<"Create Prefix";
 	//for(ItemSet::const_iterator iter = m_prefix.begin();iter!=m_prefix.end();++iter)
@@ -351,23 +261,6 @@ int TrDB::getSupport(Item prefix,ClassLabel label) const
 		m_cachedSupport[index] = 0;
 		return 0;
 	}
-
-	//ItemMap::const_iterator itemIter = m_itemTable.find(prefix);
-	//if (itemIter==m_itemTable.end())
-	//	return 0;
-
-	//ItemMap::const_iterator classIter = m_classTable.find(label);
-	//if (classIter == m_classTable.end())
-	//	return 0;
-
-	//TransactionIndexList temp;
-	//std::set_intersection(itemIter->second->begin(),
-	//	itemIter->second->end(),
-	//	classIter->second->begin(),
-	//	classIter->second->end(),
-	//	std::insert_iterator<TransactionIndexList>(temp, temp.begin() ));
-
-	//return temp.size();
 }
 
 
@@ -420,82 +313,121 @@ const TransactionIndexList* TrDB::getTransactionsByItem(Item item) const
 
 void TrDB::removeItem(Item item)
 {
-	ItemMap::const_iterator iterf = m_itemTable.find(item);
+	ItemMap::iterator iterf = m_itemTable.find(item);
 	if(iterf==m_itemTable.end())
 		return;
 
-	std::vector<Item> removedItem;
+	
+	std::set<Item> clearedItem; //记录这一轮是否已经把该项做 交运算
+	TransactionIndexList possibleRemovedTrans;//可能需要额外删除的Trans，自动检查唯一性
 
-	TransactionIndexList* removedTrans = iterf->second; //要移除的transacions 
-	for(ItemMap::iterator iter = m_itemTable.begin();
-		iter!=m_itemTable.end();
+	Item rawItem = iterf->first;
+	TransactionIndexList removedTrans(iterf->second->begin(),iterf->second->end()); //拷贝要移除的transacions 
+	if (!m_bShadow)
+		delete iterf->second;
+
+	//删除原始的Item
+	m_itemTable.erase(iterf); 
+
+	//遍历所有要删除的Transacion
+	for(TransactionIndexList::const_iterator iter = removedTrans.begin();
+		iter!=removedTrans.end();
 		++iter)
 	{
-		if (iterf == iter)
+		
+		const ItemSet& items =  m_pRawTrDB->m_transactionSet[*iter]->items;
+
+		//遍历每个transaction中的每个Item
+		for(ItemSet::const_iterator iterItem = items.begin();
+			iterItem!= items.end();++iterItem)
 		{
-			removedItem.push_back(iter->first);
-			continue;
-		}
+			Item item = *iterItem; //原始的Item已经从ItemTable中删除了
 
-		TransactionIndexList* result = new TransactionIndexList();
-		TransactionIndexList* pre = iter->second;
+			if (clearedItem.find(item)!= clearedItem.end()) //已经清除过了
+				continue;
+			
+			iterf = m_itemTable.find(*iterItem);
+			if(iterf==m_itemTable.end())
+				continue; //该Item已经不存在了，不需要清除了
 
-		std::set_difference(pre->begin(),
+			TransactionIndexList* result = new TransactionIndexList();
+			TransactionIndexList* pre = iterf->second;
+
+			std::set_difference(pre->begin(),
 			pre->end(),
-			removedTrans->begin(),
-			removedTrans->end(),
+			removedTrans.begin(),
+			removedTrans.end(),
 			std::insert_iterator<TransactionIndexList>(*result, result->begin() ));
 
-		iter->second = result;
-		delete pre;
+			iterf->second = result;
+			if (!m_bShadow)
+				delete pre; //只有是非影子才能删除
 
-		int nSize = result->size();
-		if (nSize == 0 || nSize <m_nMinSupport) //不满足支持度（含空）
-		{
-			removedItem.push_back(iter->first);
-			//TODO:这里有问题
-			/*if (nSize > 0)
-				removedTrans->insert(result->begin(),result->end()); //添加新删除的项
-				*/
+			if(result->size() < m_nMinSupport) //如果不满足支持度，下一个需要清除这个Item
+			{
+				for(TransactionIndexList::const_iterator iterTrans = result->begin();
+					iterTrans!= result->end();
+					++iterTrans)
+					possibleRemovedTrans.insert(*iterTrans); //这里传入的trans一定不在原始的removedTrans中
+
+				delete result; //这个类中创建的，所以可以清除
+				m_itemTable.erase(item); //从m_itemTable中删除了item
+			}
+			clearedItem.insert(item); //清除了item了
 		}
 	}
 
-	m_nTransactionSize -= removedTrans->size(); //删去多少个事务
-
-	for(ClassMap::iterator iter = m_classTable.begin();	iter!=m_classTable.end(); )
+	//检查一下possibleRemovedTrans，有多少已经没有了
+	for(TransactionIndexList::const_iterator iter = possibleRemovedTrans.begin();
+		iter!= possibleRemovedTrans.end();
+		++iter)
 	{
-		TransactionIndexList* result = new TransactionIndexList();
-		TransactionIndexList* pre = iter->second;
-
-		std::set_difference(pre->begin(),
-			pre->end(),
-			removedTrans->begin(),
-			removedTrans->end(),
-			std::insert_iterator<TransactionIndexList>(*result, result->begin() ));
-		delete pre;
-
-		if (result->size()==0)
+		const ItemSet& items = m_pRawTrDB->m_transactionSet[*iter]->items;
+		ItemSet::const_iterator iterItem;
+		for(iterItem = items.begin();
+			iterItem!= items.end();
+			++iterItem)
 		{
-			m_classTable.erase(iter++);
+			if (m_itemTable.find(*iterItem) != m_itemTable.end())
+				break;
 		}
-		else
-		{
+
+		//如果Transacion空了，没有在itemTable中找到任何一个Item，则表明被这次删除了。
+		if (iterItem == items.end())
+			removedTrans.insert(*iter);
+	}
+
+	//实际移除了多少个
+	m_nTransactionSize -= removedTrans.size();
+	
+	//实际移除的已经确定，和classTable中的各项做 交集运算
+	for(ClassMap::iterator iter = m_classTable.begin();
+		iter!=m_classTable.end();
+		)
+	{
+			TransactionIndexList* result = new TransactionIndexList();
+			TransactionIndexList* pre = iter->second;
+
+			std::set_difference(pre->begin(),
+			pre->end(),
+			removedTrans.begin(),
+			removedTrans.end(),
+			std::insert_iterator<TransactionIndexList>(*result, result->begin() ));
+
 			iter->second = result;
-			++iter;
-		}
+			if (!m_bShadow)
+				delete pre; //只有是非影子才能删除
+
+			if (result->empty())
+			{
+				delete result;
+				m_classTable.erase(iter++);
+			}
+			else
+				++iter;
 	}
 
-	for(std::vector<Item>::const_iterator iter = removedItem.begin();
-		iter != removedItem.end();++iter)
-	{
-		ItemMap::iterator iterf = m_itemTable.find(*iter);
-		if (iterf!=m_itemTable.end())
-		{
-			if(!m_bShadow)	//如果不是影子数据库，删除自己创建的TransactionList
-				delete iterf->second;
-			m_itemTable.erase(iterf); //去除空的和不满足支持度的项
-		}
-	}
+
 }
 
 const TransactionSet& TrDB::getTransaction() const
@@ -562,5 +494,6 @@ void TrDB::setMinSupport(int nMinSupport)
 	{
 		m_nTransactionSize += iter->second->size();
 	}
+
 
 }

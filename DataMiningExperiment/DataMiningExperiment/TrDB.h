@@ -72,6 +72,8 @@ protected:
 
 	bool m_bShadow; //是否是影子数据库，没有动态创建任何元素，无需析构
 
+	
+
 public:
 
 	void setMinSupport(int nMinSupport);

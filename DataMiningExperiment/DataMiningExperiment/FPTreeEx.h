@@ -7,21 +7,23 @@
 #include <vector>
 
 
-typedef struct ITEM_SUPPORT
-{
-public:
-	::Item item;
-	int support;
-	ITEM_SUPPORT(::Item i,int nSupport)
-	{
-		item = i;
-		support = nSupport;
-	}
-}Item_Support;
+//typedef struct ITEM_SUPPORT
+//{
+//public:
+//	::Item item;
+//	int support;
+//	ITEM_SUPPORT(::Item i,int nSupport)
+//	{
+//		item = i;
+//		support = nSupport;
+//	}
+//}Item_Support;
 
-typedef int ItemAlias; //作为一个化名
+//typedef int ItemAlias; //作为一个化名
+//
+//typedef fptree::Item ItemAliasNode;
 
-typedef fptree::Item ItemAliasNode;
+typedef fptree::Item ItemNode;
 
 
 class FPTreeEx:public fptree::FPtree
@@ -41,17 +43,17 @@ public:
 	////效率较低，获得Item的表，需要访问支持度，根据Item自然排序，并能快速定位，传入时候不对output进行清空
 	//void getHeader(std::map<::Item,int>& output) const;
 
-	//效率较高，获得头表，内容是ItemAlias
-	const std::set<ItemAliasNode>& getHeader() const { return header;};
+	//效率较高，获得头表，内容是ItemNode,根据的是Item的编号排序，而非支持度
+	const std::set<ItemNode>& getHeader() const { return header;};
 
-	void removeItemAlias(ItemAlias item);
+	void removeItem(::Item item);
 
-	int getSupport(ItemAlias prefix,ClassLabel label) const;
+	int getSupport(::Item prefix,ClassLabel label) const;
 
-	void createConditionalFPTree(const FPTreeEx& parent,ItemAlias prefix,int nMinSupport);
+	void createConditionalFPTree(const FPTreeEx& parent,Item prefix,int nMinSupport);
 
 	//使用parent的支持度做投影
-	void createConditionalFPTree(const FPTreeEx& parent,ItemAlias prefix);
+	void createConditionalFPTree(const FPTreeEx& parent,Item prefix);
 
 	void createFromTrDB(const TrDB& trdb,int nMinSupport);
 
@@ -59,16 +61,16 @@ public:
 
 	void printOnConsole() const;
 
-	//从化名获得原来的Item名字
-	::Item getItem(ItemAlias alias)const { return remap[alias]; }
+	////从化名获得原来的Item名字
+	//::Item getItem(ItemAlias alias)const { return remap[alias]; }
 
-	//从Item名字获得化名，效率较低
-	ItemAlias getItemAlias(::Item item)const { return getRemapIndex(item);}
+	////从Item名字获得化名，效率较低
+	//ItemAlias getItemAlias(::Item item)const { return getRemapIndex(item);}
 
 protected:
 	void printNode(const fptree::Item& item, int level) const;
 
-	int getRemapIndex(::Item item) const ;
+	//int getRemapIndex(::Item item) const ;
 	
 	int generateTransaction(fptree::Transaction* parent,int nParentSup,
 		const fptree::Item& itemalias,std::vector<fptree::Transaction*>& result);
