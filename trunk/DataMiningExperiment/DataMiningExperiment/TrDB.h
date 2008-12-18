@@ -70,9 +70,11 @@ protected:
 
 	int m_nClassSize; //除了原始数据库，其他数据库的都设置成0
 
-	bool m_bShadow; //是否是影子数据库，没有动态创建任何元素，无需析构
+	//检查一下可能需要删除的Transacion是否需要删除，如果是，放入到removedTrans中
+	void checkPossibleRemoveTrans(TransactionIndexList& possibleRemovedTrans,TransactionIndexList& removedTrans);
 
-	
+	//在classtable中remove Transacion
+	void removeTransFromClassTable(TransactionIndexList& removedTrans);
 
 public:
 
@@ -165,8 +167,6 @@ public:
 	 * 
 	 */
 	void createConditionalDB(const TrDB& parent,Item prefix,int nMinSupport);
-
-	
 
 	void removeItem(Item item);
 
