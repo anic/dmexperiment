@@ -205,7 +205,7 @@ namespace fptree
 		relist = new set<Element>;
 		header.clear();
 		int i=1;
-		for(itE=list.begin(); itE!=list.end(); itE++) {
+		for(itE=list.begin(); itE!=list.end(); ++itE) {
 			if(itE->support >= minsup) {
 				remap[i] = itE->id;
 				relist->insert(Element(itE->id,i));
@@ -226,52 +226,50 @@ namespace fptree
 	void FPtree::print(int *itemset, int il, int *comb, int cl, int support, int spos, int depth, int *current)
 	{
 		if(current==0) {
-			//if(out) {
-			//	set<int> outset;
-			//	for(int j=0; j<il; j++) outset.insert(remap[itemset[j]]); 
-			//	for(set<int>::iterator k=outset.begin(); k!=outset.end(); k++) fprintf(out, "%d ", *k);
-			//	fprintf(out, "(%d)\n", support);
-			//	if(cl) {
-			//		current = new int[cl];
-			//		print(itemset,il,comb,cl,support,0,1,current);
-			//		delete [] current;
-			//	}
-			//}
-
-			
+			if(out) {
 				set<int> outset;
 				for(int j=0; j<il; j++) outset.insert(remap[itemset[j]]); 
-				for(set<int>::iterator k=outset.begin(); k!=outset.end(); k++) printf("%d ", *k);
-				printf("(%d)\n", support);
+				for(set<int>::iterator k=outset.begin(); k!=outset.end(); k++) fprintf(out, "%d ", *k);
+				fprintf(out, "(%d)\n", support);
 				if(cl) {
 					current = new int[cl];
 					print(itemset,il,comb,cl,support,0,1,current);
 					delete [] current;
 				}
 			
+			//set<int> outset;
+			//for(int j=0; j<il; j++) outset.insert(remap[itemset[j]]); 
+			//for(set<int>::iterator k=outset.begin(); k!=outset.end(); k++) printf("%d ", *k);
+			//printf("(%d)\n", support);
+			//if(cl) {
+			//	current = new int[cl];
+			//	print(itemset,il,comb,cl,support,0,1,current);
+			//	delete [] current;
+			}
+			
 			
 		}
 		else {
 			int loper = spos;
 			spos = cl;
-			/*while(--spos >= loper) {
+			while(--spos >= loper) {
 				set<int> outset;
 				current[depth-1] = comb[spos];
 				for(int i=0; i<depth; i++) outset.insert(remap[current[i]]); 
 				for(int j=0; j<il; j++) outset.insert(remap[itemset[j]]); 
 				for(set<int>::iterator k=outset.begin(); k!=outset.end(); k++) fprintf(out, "%d ", *k);
 				fprintf(out, "(%d)\n", support);
-				print(itemset, il, comb, cl, support, spos+1, depth+1, current);*/
-
-			while(--spos >= loper) {
-				set<int> outset;
-				current[depth-1] = comb[spos];
-				for(int i=0; i<depth; i++) outset.insert(remap[current[i]]); 
-				for(int j=0; j<il; j++) outset.insert(remap[itemset[j]]); 
-				for(set<int>::iterator k=outset.begin(); k!=outset.end(); k++) printf( "%d ", *k);
-				printf("(%d)\n", support);
 				print(itemset, il, comb, cl, support, spos+1, depth+1, current);
 			}
+			//while(--spos >= loper) {
+			//	set<int> outset;
+			//	current[depth-1] = comb[spos];
+			//	for(int i=0; i<depth; i++) outset.insert(remap[current[i]]); 
+			//	for(int j=0; j<il; j++) outset.insert(remap[itemset[j]]); 
+			//	for(set<int>::iterator k=outset.begin(); k!=outset.end(); k++) printf( "%d ", *k);
+			//	printf("(%d)\n", support);
+			//	print(itemset, il, comb, cl, support, spos+1, depth+1, current);
+			//}
 		}
 	}
 }
