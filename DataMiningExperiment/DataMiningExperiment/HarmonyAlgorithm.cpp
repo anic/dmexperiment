@@ -32,7 +32,7 @@ void HarmonyAlgorithm::cleanResult()
 		if(ir->numUsed <= 0)
 		{
 			ir->id = -1;
-			ir++;
+			++ir;
 			//m_result.erase(ir++);
 		}
 		else
@@ -199,7 +199,7 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, std::map<Item,boo
 
 		sort(itCRTable.begin(),itCRTable.end(), ItemCRCompare());  
 		std::map<Item,bool> newMinedItemMap;
-		for(ItemCRTable::iterator it =  itCRTable.begin(); it!= itCRTable.end(); it++)
+		for(ItemCRTable::iterator it =  itCRTable.begin(); it!= itCRTable.end(); ++it) //ÓÃ++it±Èit++¿ì
 		{			
 			
 			TrDB cdb;
@@ -218,11 +218,11 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, std::map<Item,boo
 }
 bool HarmonyAlgorithm::setItCRTalbeMCD(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable)
 {
-	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); iter++)
+	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); ++iter)
 	{			
 		double maxProC= 0.0;
 		int supPx =iter->second->size();
-		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic != trdb.getClassTable().end(); ic++)
+		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic != trdb.getClassTable().end(); ++ic)
 		{			
 			double supPxC = trdb.getSupport(iter->first, ic->first);
 			double temp = supPxC/supPx;
@@ -238,7 +238,7 @@ bool HarmonyAlgorithm::setItCRTalbeEA(const TrDB& trdb, ItemMap& itTable,ItemCRT
 	int k = trdb.getClassTable().size();
 	double proPxC = 0.0;
 	double entropy = 0.0;
-	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); iter++)
+	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); ++iter)
 	{		
 		int supPx =iter->second->size();
 		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic != trdb.getClassTable().end(); ++ic)
@@ -257,7 +257,7 @@ bool HarmonyAlgorithm::setItCRTalbeCRA(const TrDB& trdb, ItemMap& itTable,ItemCR
 	double mean_supP = 0.0;
 	double mean_supPx = 0.0;
 	int k =trdb.getClassTable().size();
-	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); iter++)
+	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); ++iter)
 	{		
 		mean_supPx = (iter->second->size() +0.0)/k;
 		int supPC = 0;
