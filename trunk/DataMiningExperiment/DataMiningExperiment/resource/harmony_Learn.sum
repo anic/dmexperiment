@@ -1,0 +1,60 @@
+HARMONY: Efficiently mining the most confident rules for classification.
+University of Minnesota at Twin-cities.
+ALL RIGHTS RESERVED!!
+
+0 4:1 6:1 8:1 10:1 
+1 5:1 7:1 8:1 
+1 7:1 9:1 12:1
+0 8:1 9:1 11:1 
+0 4:1 5:1 6:1 7:1 8:1 9:1 
+1 5:1 6:1 7:1 
+0 4:1 6:1 9:1
+0 8:1 9:1 
+1 5:1 7:1
+
+Section 1: the highest confident pattern covered by the corresponding transaction:
+(Tid=1) : 6 10 : 1.00
+(Tid=2) : 7 : 0.80
+(Tid=3) : 7 12 : 1.00
+(Tid=4) : 8 11 : 1.00
+(Tid=5) : 4 7 : 1.00
+(Tid=6) : 7 : 0.80
+(Tid=7) : 6 9 : 1.00
+(Tid=8) : 8 9 : 1.00
+(Tid=9) : 7 : 0.80
+
+
+Section 2.0: The discovered rules for class 0 instances and their statistics:
+(Rid=1) : 6 10 -> (L_C: 1) : (G_C: 1), (CONF: 1.0000)
+(Rid=2) : 8 11 -> (L_C: 1) : (G_C: 1), (CONF: 1.0000)
+(Rid=3) : 4 7 -> (L_C: 1) : (G_C: 1), (CONF: 1.0000)
+(Rid=4) : 6 9 -> (L_C: 1) : (G_C: 2), (CONF: 1.0000)
+(Rid=5) : 8 9 -> (L_C: 1) : (G_C: 3), (CONF: 1.0000)
+
+Section 2.1: The discovered rules for class 1 instances and their statistics:
+(Rid=6) : 7 12 -> (L_C: 1) : (G_C: 1), (CONF: 1.0000)
+(Rid=7) : 7 -> (L_C: 3) : (G_C: 5), (CONF: 0.8000)
+
+
+
+
+Section 3: Pattern length distribution:
+Pattern Length	# patterns
+1		1
+2		6
+Total # patterns: 7
+
+
+
+Section 4:Parameters and result summary.
+
+prompt% harmony4windows learn -fname Train10.txt 
+----------------------------------------------------------------------------
+Transaction database:					Train10.txt
+Number of items in Database:				13
+Maximal number of items in one transaction:			8
+Number of transactions in Database:				9
+Number of covered transactions:				9
+Minimum support threshold:					0
+Maximum support threshold:					9
+Total runtime:						0.001 sec.
