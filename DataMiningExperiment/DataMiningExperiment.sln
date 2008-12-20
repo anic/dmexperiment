@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DataMiningExperiment", "DataMiningExperiment\DataMiningExperiment.vcproj", "{B5D92BD9-E4BB-4E95-8F8B-4E74EEB2AE94}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0964E3FF-081C-4064-AA87-417C882CDA61}"
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
