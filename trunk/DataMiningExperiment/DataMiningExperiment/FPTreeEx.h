@@ -7,22 +7,6 @@
 #include <vector>
 
 
-//typedef struct ITEM_SUPPORT
-//{
-//public:
-//	::Item item;
-//	int support;
-//	ITEM_SUPPORT(::Item i,int nSupport)
-//	{
-//		item = i;
-//		support = nSupport;
-//	}
-//}Item_Support;
-
-//typedef int ItemAlias; //作为一个化名
-//
-//typedef fptree::Item ItemAliasNode;
-
 typedef fptree::Item ItemNode;
 
 
@@ -61,27 +45,19 @@ public:
 
 	void printOnConsole() const;
 
-	////从化名获得原来的Item名字
-	//::Item getItem(ItemAlias alias)const { return remap[alias]; }
-
-	////从Item名字获得化名，效率较低
-	//ItemAlias getItemAlias(::Item item)const { return getRemapIndex(item);}
-
 protected:
 	void printNode(const fptree::Item& item, int level) const;
 
-	//int getRemapIndex(::Item item) const ;
-	
 	int generateTransaction(fptree::Transaction* parent,int nParentSup,
-		const fptree::Item& itemalias,std::vector<fptree::Transaction*>& result);
+		fptree::Item_& itemNode,std::vector<fptree::Transaction*>& result,int maxItemSize);
 
-	void ReOrder(){ __super::ReOrder();}
-	int Prune(){ return __super::Prune(); }
-	void setOutput(FILE *of){ /*void*/;}
-	void print(int *itemset, int il, int *comb, int cl, int support, int spos=0, int depth=0, int *current=0){}
-	
-	int processTransaction(fptree::Transaction *t, int times=1){return __super::processTransaction(t,times);}
-	int processItems(fptree::Transaction *t, int times=1){return __super::processItems(t,times);}
-	
-	int grow(int *current, int depth){return 0;}
+	//void ReOrder(){ __super::ReOrder();}
+	//int Prune(){ return __super::Prune(); }
+	//void setOutput(FILE *of){ /*void*/;}
+	//void print(int *itemset, int il, int *comb, int cl, int support, int spos=0, int depth=0, int *current=0){}
+	//
+	//int processTransaction(fptree::Transaction *t, int times=1){return __super::processTransaction(t,times);}
+	//int processItems(fptree::Transaction *t, int times=1){return __super::processItems(t,times);}
+	//
+	//int grow(int *current, int depth){return 0;}
 };

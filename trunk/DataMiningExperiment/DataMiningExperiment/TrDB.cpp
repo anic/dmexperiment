@@ -118,7 +118,7 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 	fs.close();
 
 	m_nTransactionSize = m_transactionSet.size();
-	m_nClassSize = m_classTable.size();
+	m_nClassSize = m_classTable.rbegin()->first;
 	allocateCached();
 
 }
@@ -162,6 +162,9 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 		if (m_nTransactionSize == 0 || m_nTransactionSize < nMinSupport) //事务数目少于支持度，说明所有的Item都将不满足支持度
 			return;
 
+
+		TransactionIndexList possibleRemovedTrans,removedTrans;
+
 		for(ItemMap::const_iterator iter = parent.m_itemTable.begin();
 			iter!=parent.m_itemTable.end();
 			++iter)
@@ -177,15 +180,35 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 					iterf->second->end(),
 					iter->second->begin(),
 					iter->second->end(),
-					std::insert_iterator<ItemSet>(*temp, temp->begin() ));
+					std::insert_iterator<TransactionIndexList>(*temp, temp->begin() ));
 
 				int resultSize = temp->size();
-				if (resultSize >0 && resultSize>= nMinSupport)
-					m_itemTable.insert(std::make_pair(iter->first,temp));
+				if (resultSize >0)
+				{	
+					if (resultSize>= nMinSupport)
+						m_itemTable.insert(std::make_pair(iter->first,temp));
+					else
+					{
+						possibleRemovedTrans.insert(temp->begin(),temp->end());
+						delete temp;
+					}
+				}
 				else
 					delete temp;
 			}
 		}
+
+		this->checkPossibleRemoveTrans(possibleRemovedTrans,removedTrans);
+		
+		TransactionIndexList existTrans;
+		std::set_difference(iterf->second->begin(),
+			iterf->second->end(),
+			removedTrans.begin(),
+			removedTrans.end(),
+			std::insert_iterator<TransactionIndexList>(existTrans,existTrans.begin()));
+		
+		m_nTransactionSize = existTrans.size();
+		
 
 		for(ClassMap::const_iterator iter = parent.m_classTable.begin();
 			iter!=parent.m_classTable.end();
@@ -194,11 +217,11 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 			//对于每一个类表，做交运算
 			TransactionIndexList* temp = new TransactionIndexList();
 
-			std::set_intersection(iterf->second->begin(),
-				iterf->second->end(),
+			std::set_intersection(existTrans.begin(),
+				existTrans.end(),
 				iter->second->begin(),
 				iter->second->end(),
-				std::insert_iterator<ItemSet>(*temp, temp->begin() ));
+				std::insert_iterator<TransactionIndexList>(*temp, temp->begin() ));
 
 			if (!temp->empty())
 				m_classTable.insert(std::make_pair(iter->first,temp));
