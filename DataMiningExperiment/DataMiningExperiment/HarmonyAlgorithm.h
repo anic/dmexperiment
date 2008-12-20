@@ -43,8 +43,29 @@ public:
 
 typedef std::vector<HCCR> HCCRSet;
 
+typedef struct _ItemCRV
+{
+	Item item;
+	double val;
+	int sup;
+} ItemCRV;
+class ItemCRVCompare
+{
+public:
+
+	bool operator()(const ItemCRV& lhs, //用于排序的比较函数
+		const ItemCRV& rhs) const
+	{	 
+		if(lhs.val < rhs.val || (lhs.val == rhs.val && lhs.sup > rhs.sup))
+			return true;
+		return false;
+	}
+
+};
+
 typedef std::pair<Item, double> ItemCR;
 
+//typedef std
 class ItemCRCompare
 	{  //比较函数的类
 
@@ -70,6 +91,7 @@ enum ESortAlg
 	CRA//correlation coefficient ascending order
 };
 typedef std::vector<ItemCR> ItemCRTable;
+typedef std::vector<ItemCRV> ItemCRVTable;
 
 /*!
  * \brief
@@ -100,9 +122,14 @@ public:
 
 private:
 	void ruleminer(const TrDB& trdb,int nSupport,std::map<Item,bool>& minedItemMap, ESortAlg sortAlg);
-	bool setItCRTalbeCRA(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable);
-	bool setItCRTalbeEA(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable);
-	bool setItCRTalbeMCD(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable);
+	//bool setItCRTalbeCRA(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable);
+	//bool setItCRTalbeEA(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable);
+	//bool setItCRTalbeMCD(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable);
+
+	bool setItCRVTableMCD(const TrDB& trdb, ItemMap& itTable,ItemCRVTable& itCRVTable);
+	bool setItCRVTableEA(const TrDB& trdb, ItemMap& itTable,ItemCRVTable& itCRVTable);
+	bool setItCRVTableCRA(const TrDB& trdb, ItemMap& itTable,ItemCRVTable& itCRVTable);
+
 	void initHCCR(const TrDB& trdb);
 	void cleanResult();
 private :

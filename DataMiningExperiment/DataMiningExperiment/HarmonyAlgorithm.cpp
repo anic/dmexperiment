@@ -68,7 +68,7 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, std::map<Item,boo
 			bool isNewRule = true;
 			for(TransactionIndexList::const_iterator tid = (*ic).second->begin(); tid != (*ic).second->end(); ++tid)
 			{
-				if(_hccrSet[*tid]._hConf < r.confidence)
+				if( _hccrSet[*tid]._hConf < r.confidence )
 				{					
 					int oldRid = _hccrSet[*tid]._rid;
 					if( oldRid >=0 && oldRid < m_result.size())
@@ -89,6 +89,38 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, std::map<Item,boo
 					}
 				}
 			}
+				///*int oldRid = _hccrSet[*tid]._rid;
+				//if(oldRid == -1 && _hccrSet[*tid]._hConf < r.confidence)
+				//{
+				//	_hccrSet[*tid]._hConf = r.confidence;
+				//	_hccrSet[*tid]._rid = r.id;					
+				//	if(isNewRule)
+				//	{
+				//		r.numUsed++;
+				//		m_result.push_back(r);
+				//		isNewRule = false;
+				//	}
+				//}
+				//else if(_hccrSet[*tid]._hConf < r.confidence ||(_hccrSet[*tid]._hConf == r.confidence && m_result.at(oldRid).body.size() > r.body.size()))
+				//{					
+				//	if( oldRid >=0 && oldRid < m_result.size())
+				//	{
+				//		m_result.at(oldRid).numUsed --;
+				//	}
+				//	_hccrSet[*tid]._hConf = r.confidence;
+				//	_hccrSet[*tid]._rid = r.id;					
+				//	if(isNewRule)
+				//	{
+				//		r.numUsed++;
+				//		m_result.push_back(r);
+				//		isNewRule = false;
+				//	}
+				//	else
+				//	{
+				//		m_result.at(r.id).numUsed ++;
+				//	}
+				//}*/
+			
 		}
 	}
 	
@@ -124,99 +156,138 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, std::map<Item,boo
 		else 
 			++iter;
 	}
-	//prune unpromising 
-	for(ItemMap::iterator iter = itTable.begin(); iter!= itTable.end(); )
+	if(!(trdb.getPrefix().empty()))	
 	{
-		TransactionIndexList::iterator it = iter->second->begin();
-		for( ; it!= iter->second->end(); ++it)
+		//prune unpromising 
+		for(ItemMap::iterator iter = itTable.begin(); iter!= itTable.end(); )
 		{
-			//int tid = iter->second.at(it);
-			double upSupPx = trdb.getSupport(iter->first,_hccrSet[*it]._cid);
-			upSupPx = (upSupPx + 0.0)/min_sup;
-			if(upSupPx >1)
-				upSupPx = 1;
-			if(_hccrSet[*it]._hConf < upSupPx)
-				break;					
+			TransactionIndexList::iterator it = iter->second->begin();
+			for( ; it!= iter->second->end(); ++it)
+			{
+				//int tid = iter->second.at(it);
+				double upSupPx = trdb.getSupport(iter->first,_hccrSet[*it]._cid);
+				if(upSupPx == 0)
+					continue;
+				if(min_sup == 0 && upSupPx != 0)
+					upSupPx = 1;
+				else
+				{
+					upSupPx = (upSupPx + 0.0)/min_sup;
+					if(upSupPx >1)
+						upSupPx = 1;
+				}			
+				if(_hccrSet[*it]._hConf < upSupPx)
+					break;					
+			}
+			if( it == iter->second->end())
+			{
+				itTable.erase(iter++);			
+			}
+			else 
+				++iter;
 		}
-		if( it == iter->second->end())
-		{
-			itTable.erase(iter++);			
-		}
-		else 
-			++iter;
 	}
 	//
 	if(!(itTable.empty()))
 	{
-		bool prunned = true;
-		for(ClassMap::const_iterator iter = trdb.getClassTable().begin(); iter != trdb.getClassTable().end(); ++iter)
+		if(!(trdb.getPrefix().empty()))	
 		{
-			//ClassLabel cl = iter->first
-			double upSupP = trdb.getSupport(iter->first);
-			upSupP = upSupP/min_sup;
-			if(upSupP > 1)
-				upSupP = 1;
-			
-			for(TransactionIndexList::const_iterator it = iter->second->begin()
-				; it != iter->second->end(); ++it)
+			bool prunned = true;
+			for(ClassMap::const_iterator iter = trdb.getClassTable().begin(); iter != trdb.getClassTable().end(); ++iter)
 			{
-				//int tid = iter->second.at(it);
-				if(_hccrSet[*it]._hConf < upSupP)
+				//ClassLabel cl = iter->first
+				double upSupP = trdb.getSupport(iter->first);
+				upSupP = upSupP/min_sup;
+				if(upSupP > 1)
+					upSupP = 1;
+				
+				for(TransactionIndexList::const_iterator it = iter->second->begin()
+					; it != iter->second->end(); ++it)
 				{
-					prunned = false;
-					break;
+					//int tid = iter->second.at(it);
+					if(_hccrSet[*it]._hConf < upSupP)
+					{
+						prunned = false;
+						break;
+					}
 				}
+				if(prunned == false)
+					break;
 			}
-			if(prunned == false)
-				break;
+			if(prunned == true)
+				return;
 		}
-		if(prunned == true)
-			return;
-		ItemCRTable itCRTable;
+		ItemCRVTable itCRVTable;
 		switch(sortAlg)
 		{
 		case MCD:
 			{
-				setItCRTalbeMCD(trdb,itTable,itCRTable);
+				setItCRVTableMCD(trdb,itTable,itCRVTable);
 				break;
 			}
 		case EA:
 			{
-				setItCRTalbeEA(trdb,itTable,itCRTable);
+				setItCRVTableEA(trdb,itTable,itCRVTable);
 				break;
 			}
-		default:// CRA:
+		default:
 			{
-				setItCRTalbeCRA(trdb,itTable,itCRTable);
+				setItCRVTableCRA(trdb,itTable,itCRVTable);
 				break;
 			}
 		}
-		/*ItemCRTable test;
-		test.push_back(::make_pair(2,89));
-		test.push_back(::make_pair(22,839));
-		test.push_back(::make_pair(21,8));
-		sort(test.begin(),test.end(), ItemCRCompare());*/
-
-		sort(itCRTable.begin(),itCRTable.end(), ItemCRCompare());  
+		sort(itCRVTable.begin(),itCRVTable.end(), ItemCRVCompare());  
 		std::map<Item,bool> newMinedItemMap;
-		for(ItemCRTable::iterator it =  itCRTable.begin(); it!= itCRTable.end(); ++it) //用++it比it++快
+		for(ItemCRVTable::iterator it =  itCRVTable.begin(); it!= itCRVTable.end(); ++it) //用++it比it++快
 		{			
 			
 			TrDB cdb;
-			cdb.createConditionalDB(trdb, it->first, min_sup);			
+			cdb.createConditionalDB(trdb, it->item, min_sup);			
 			ruleminer(cdb, min_sup, newMinedItemMap, sortAlg);	
-			newMinedItemMap.insert(::make_pair(it->first, true));
-//#if _DEBUG
-//			std::cout<<"projecting db ";
-//			for(ItemSet::const_iterator ip = cdb.getPrefix().begin(); ip != cdb.getPrefix().end(); ++ip)
-//				std::cout<<*ip<<" ";
-//			std::cout<<std::endl;
-//#endif
-			
+			newMinedItemMap.insert(::make_pair(it->item, true));
 		}
+	
+//
+//		ItemCRTable itCRTable;
+//		switch(sortAlg)
+//		{
+//		case MCD:
+//			{
+//				setItCRTalbeMCD(trdb,itTable,itCRTable);
+//				break;
+//			}
+//		case EA:
+//			{
+//				setItCRTalbeEA(trdb,itTable,itCRTable);
+//				break;
+//			}
+//		default:// CRA:
+//			{
+//				setItCRTalbeCRA(trdb,itTable,itCRTable);
+//				break;
+//			}
+//		}
+//		sort(itCRTable.begin(),itCRTable.end(), ItemCRCompare());  
+//		std::map<Item,bool> newMinedItemMap;
+//		for(ItemCRTable::iterator it =  itCRTable.begin(); it!= itCRTable.end(); ++it) //用++it比it++快
+//		{			
+//			
+//			TrDB cdb;
+//			cdb.createConditionalDB(trdb, it->first, min_sup);			
+//			ruleminer(cdb, min_sup, newMinedItemMap, sortAlg);	
+//			newMinedItemMap.insert(::make_pair(it->first, true));
+////#if _DEBUG
+////			std::cout<<"projecting db ";
+////			for(ItemSet::const_iterator ip = cdb.getPrefix().begin(); ip != cdb.getPrefix().end(); ++ip)
+////				std::cout<<*ip<<" ";
+////			std::cout<<std::endl;
+////#endif
+//			
+//		}
 	}
 }
-bool HarmonyAlgorithm::setItCRTalbeMCD(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable)
+
+bool HarmonyAlgorithm::setItCRVTableMCD(const TrDB& trdb, ItemMap& itTable,ItemCRVTable& itCRVTable)
 {
 	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); ++iter)
 	{			
@@ -229,11 +300,16 @@ bool HarmonyAlgorithm::setItCRTalbeMCD(const TrDB& trdb, ItemMap& itTable,ItemCR
 			if(temp > maxProC)
 				maxProC = temp;		
 		}
-		itCRTable.push_back(::make_pair(iter->first, -maxProC)); //按-maxProC的升序排列
+		ItemCRV it;
+		it.item = iter->first;
+		it.sup = supPx;
+		it.val = -maxProC;
+		itCRVTable.push_back(it);
+		//itCRTable.push_back(::make_pair(iter->first, -maxProC)); //按-maxProC的升序排列
 	}
 	return true;
 }
-bool HarmonyAlgorithm::setItCRTalbeEA(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable)
+bool HarmonyAlgorithm::setItCRVTableEA(const TrDB& trdb, ItemMap& itTable,ItemCRVTable& itCRVTable)
 {
 	int k = trdb.getClassTable().size();
 	double proPxC = 0.0;
@@ -247,12 +323,18 @@ bool HarmonyAlgorithm::setItCRTalbeEA(const TrDB& trdb, ItemMap& itTable,ItemCRT
 			proPxC = supPxC/supPx;
 			entropy +=log(proPxC)*(-proPxC);			
 		}
-		itCRTable.push_back(::make_pair(iter->first, entropy));
+		ItemCRV it;
+		it.item = iter->first;
+		it.sup = supPx;
+		it.val = entropy;
+		itCRVTable.push_back(it);
+
+		//itCRTable.push_back(::make_pair(iter->first, entropy));
 	}
 	return true;
 
 }
-bool HarmonyAlgorithm::setItCRTalbeCRA(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable)
+bool HarmonyAlgorithm::setItCRVTableCRA(const TrDB& trdb, ItemMap& itTable,ItemCRVTable& itCRVTable)
 {
 	double mean_supP = 0.0;
 	double mean_supPx = 0.0;
@@ -279,14 +361,22 @@ bool HarmonyAlgorithm::setItCRTalbeCRA(const TrDB& trdb, ItemMap& itTable,ItemCR
 			temp2 += supPxC*supPxC;
 		}
 		sigmaPx =  (temp2+0.0)/k - mean_supPx*mean_supPx;
+
+		ItemCRV it;
+		it.item = iter->first;
+		it.sup = iter->second->size();
+		
 		if(sigmaPx > 0)
 		{
 			sigmaPx = sqrt(sigmaPx);
-			itCRTable.push_back(::make_pair(iter->first,temp/sigmaPx));
+			it.val = temp/sigmaPx;
+			itCRVTable.push_back(it);			
 		}
 		else if(sigmaPx == 0)
 		{
-			itCRTable.push_back(::make_pair(iter->first,1000000));
+			it.val = 1000000;
+			itCRVTable.push_back(it);
+			//itCRTable.push_back(::make_pair(iter->first,1000000));
 		}
 		else	
 			return false;
@@ -294,4 +384,83 @@ bool HarmonyAlgorithm::setItCRTalbeCRA(const TrDB& trdb, ItemMap& itTable,ItemCR
 	}
 	return true;
 }
+
+//bool HarmonyAlgorithm::setItCRTalbeMCD(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable)
+//{
+//	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); ++iter)
+//	{			
+//		double maxProC= 0.0;
+//		int supPx =iter->second->size();
+//		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic != trdb.getClassTable().end(); ++ic)
+//		{			
+//			double supPxC = trdb.getSupport(iter->first, ic->first);
+//			double temp = supPxC/supPx;
+//			if(temp > maxProC)
+//				maxProC = temp;		
+//		}
+//		itCRTable.push_back(::make_pair(iter->first, -maxProC)); //按-maxProC的升序排列
+//	}
+//	return true;
+//}
+//bool HarmonyAlgorithm::setItCRTalbeEA(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable)
+//{
+//	int k = trdb.getClassTable().size();
+//	double proPxC = 0.0;
+//	double entropy = 0.0;
+//	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); ++iter)
+//	{		
+//		int supPx =iter->second->size();
+//		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic != trdb.getClassTable().end(); ++ic)
+//		{			
+//			double supPxC = trdb.getSupport(iter->first, ic->first);
+//			proPxC = supPxC/supPx;
+//			entropy +=log(proPxC)*(-proPxC);			
+//		}
+//		itCRTable.push_back(::make_pair(iter->first, entropy));
+//	}
+//	return true;
+//
+//}
+//bool HarmonyAlgorithm::setItCRTalbeCRA(const TrDB& trdb, ItemMap& itTable,ItemCRTable& itCRTable)
+//{
+//	double mean_supP = 0.0;
+//	double mean_supPx = 0.0;
+//	int k =trdb.getClassTable().size();
+//	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); ++iter)
+//	{		
+//		mean_supPx = (iter->second->size() +0.0)/k;
+//		int supPC = 0;
+//		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic != trdb.getClassTable().end(); ++ic)
+//		{			
+//			supPC += ic->second->size();			
+//		}
+//		mean_supP = (supPC+0.0)/k;
+//
+//		int supPxC = 0;
+//		double temp = 0;
+//		int temp2 = 0;
+//		double sigmaPx = 0.0;
+//		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic != trdb.getClassTable().end(); ++ic)
+//		{			
+//			supPC = ic->second->size();
+//			supPxC = trdb.getSupport(iter->first, ic->first);
+//			temp += (supPC*supPxC - mean_supP*mean_supPx);
+//			temp2 += supPxC*supPxC;
+//		}
+//		sigmaPx =  (temp2+0.0)/k - mean_supPx*mean_supPx;
+//		if(sigmaPx > 0)
+//		{
+//			sigmaPx = sqrt(sigmaPx);
+//			itCRTable.push_back(::make_pair(iter->first,temp/sigmaPx));
+//		}
+//		else if(sigmaPx == 0)
+//		{
+//			itCRTable.push_back(::make_pair(iter->first,1000000));
+//		}
+//		else	
+//			return false;
+//		
+//	}
+//	return true;
+//}
 
