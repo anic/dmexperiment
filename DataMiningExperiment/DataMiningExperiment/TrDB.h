@@ -170,6 +170,11 @@ public:
 
 	void removeItem(Item item);
 
+	//是否是源的数据库
+	bool isSource()const{ return m_bSource;}
+
+	const TrDB* getSourceTrDB()const { return m_pRawTrDB;}
+
 
 	TrDB(void);
 	virtual ~TrDB(void);
