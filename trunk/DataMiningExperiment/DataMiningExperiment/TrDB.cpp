@@ -16,6 +16,7 @@ TrDB::TrDB(void)
 	this->m_pRawTrDB = NULL;
 	this->m_nTransactionSize = 0;
 	this->m_nClassSize = 0; //除了原始数据库，其他数据库的都设置成0
+	this->m_pClassRemap = NULL;
 }
 
 TrDB::TrDB(const TrDB& trdb)
@@ -52,6 +53,9 @@ TrDB::TrDB(const TrDB& trdb)
 
 TrDB::~TrDB(void)
 {
+	if (m_pClassRemap!=NULL)
+		delete m_pClassRemap;
+
 	if (m_bSource)	
 	{
 		for(TransactionSet::const_iterator iter = m_transactionSet.begin();
@@ -84,9 +88,13 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 
 	m_bSource = true;
 	this->m_pRawTrDB = this;
+	this->m_pClassRemap = new std::vector<int>();
 
 	ifstream fs(filename.c_str());
 	string line;
+
+	//临时记住旧Class与新class的对应
+	std::map<int,int> tempMap;
 
 	int index = 0;
 	while(std::getline(fs,line)){
@@ -100,6 +108,20 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 
 		Transaction* t = new Transaction(index);
 		t->label = ::atoi(s.c_str());
+
+		
+		std::map<int,int>::iterator iterf = tempMap.find(t->label);
+		if (iterf != tempMap.end())
+			t->label = iterf->second;
+		else
+		{
+			int newLabel = m_pClassRemap->size();
+			m_pClassRemap->push_back(t->label);
+			tempMap.insert(std::make_pair(t->label,newLabel));
+			t->label = newLabel;
+		}
+
+
 
 		//记录class与transaction的对应
 		this->setClassMap(t->label,index);
@@ -118,7 +140,7 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 	fs.close();
 
 	m_nTransactionSize = m_transactionSet.size();
-	m_nClassSize = m_classTable.rbegin()->first;
+	m_nClassSize = m_classTable.size();
 	allocateCached();
 
 }
@@ -524,4 +546,12 @@ void TrDB::removeTransFromClassTable(TransactionIndexList& removedTrans)
 			else
 				++iter;
 	}
+}
+
+ClassLabel TrDB::getClass(ClassLabel alias)const
+{
+	if (!m_bSource)
+		throw exception("Only source trdb can invoke this method.");
+	
+	return (*m_pClassRemap)[alias];
 }

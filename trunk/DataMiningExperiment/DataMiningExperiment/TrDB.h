@@ -76,7 +76,11 @@ protected:
 	//ÔÚclasstableÖÐremove Transacion
 	void removeTransFromClassTable(TransactionIndexList& removedTrans);
 
+	std::vector<int>* m_pClassRemap;
+
 public:
+
+	ClassLabel getClass(ClassLabel alias)const;
 
 	void setMinSupport(int nMinSupport);
 

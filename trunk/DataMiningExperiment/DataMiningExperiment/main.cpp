@@ -71,7 +71,7 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,int nMinSupport)
 			if (iter->id <0 )
 				continue;
 
-			ofs<<iter->head<<" ";
+			ofs<<trdb.getClass(iter->head)<<" ";
 			for(ItemSet::const_iterator ibody = iter->body.begin();
 				ibody !=iter->body.end();
 				++ibody)
@@ -89,9 +89,10 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 
 	//创建了数据库，作为测试，读取10行
-	int len = -1;
-	int minsup = 50;
+	int len = 10;
+	int minsup = 0;
 	std::string filename = "UKchess_train_10_1.dat";
+	
 	
 	/*以下这段请保留不要删除，作为正式版本需要根据读入字符串处理*/
 	//if (argc>=2 )
@@ -102,6 +103,17 @@ int _tmain(int argc, _TCHAR* argv[])
 	TrDB trdb;
 	trdb.createFromFile(filename,len);
 	trdb.setMinSupport(minsup);
+
+	TrDB cdb;
+	cdb.createConditionalDB(trdb,21,0);
+
+	FPTreeEx fptree;
+	fptree.createFromTrDB(trdb);
+	fptree.printOnConsole();
+	
+
+	std::vector<ItemSet_Support> out;
+	fptree.getPotentialPrefix(60,out);
 
 	DDPMineAlgorithm ddp;
 	HarmonyAlgorithm har;
