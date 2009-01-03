@@ -39,7 +39,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	unsigned int minsup = 0;
 	std::string filename,rulefile;
 	int type = 1;
-	int bWriteLabel = 2; //0表示默认写0，1 表示写标签，2表示不写
+	int bWriteLabel = 2; //0表示默认写0，1 表示写标签，2表示不写，3表示1改成-1，2改成1
 	if (argc>=5)
 	{
 		filename = argv[1];
@@ -149,10 +149,17 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,con
 				ofs<<"0 ";
 			else if(writeLabel == 1)
 				ofs<<trdb.getClass(iter->head)<<" ";
+			else if(writeLabel == 3)
+			{
+				if (trdb.getClass(iter->head) == 1)
+					ofs<<"-1 ";
+				else
+					ofs<<"1 ";
+			} 
 			else
 			{
 				//不写
-			} 
+			}
 				
 
 			for(ItemSet::const_iterator ibody = iter->body.begin();
