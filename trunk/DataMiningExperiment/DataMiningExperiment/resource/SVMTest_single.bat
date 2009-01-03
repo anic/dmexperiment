@@ -18,7 +18,7 @@ rem minsup - 最小相对支持度
 rem k - 为每个实例最多挖掘的规则数目
 rem output - 输出的规则文件
 rem type - 1是用harmony；其他用ddpmine
-rem label - 1是输出标签; 否则输出0
+rem label - 1是输出标签;0 输出0;3表示1变成-1，2变成1;2表示不输出
 
 @echo 正在执行算法...
 DataMiningExperiment.exe %TRAIN%_%NUM%_%i%.dat %MIN_SUP% 1 %OUTPUT_DIR%rule%i%.txt %TYPE% 1
