@@ -22,7 +22,7 @@ using namespace std;
 #include "FPTreeEx.h"
 
 void checkResult(const Result& result,const TrDB& trdb);
-void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,const char* fOutput);
+void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,const char* fOutput,int writeLabel);
 
 /*
 dataset minsup k output
@@ -39,6 +39,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	unsigned int minsup = 0;
 	std::string filename,rulefile;
 	int type = 1;
+	int bWriteLabel = 2; //0表示默认写0，1 表示写标签，2表示不写
 	if (argc>=5)
 	{
 		filename = argv[1];
@@ -48,6 +49,9 @@ int _tmain(int argc, _TCHAR* argv[])
 			type = atoi(argv[5]);
 		else
 			type = 1;
+
+		if (argc >= 7)
+			bWriteLabel = atoi(argv[6]);
 	}
 	
 	/*测试代码*/
@@ -80,12 +84,12 @@ int _tmain(int argc, _TCHAR* argv[])
 	if (type == 1)
 	{
 		HarmonyAlgorithm har;
-		output(har,trdb,minsup,rulefile.c_str());
+		output(har,trdb,minsup,rulefile.c_str(),bWriteLabel);
 	}
 	else
 	{
 		DDPMineAlgorithm ddp;
-		output(ddp,trdb,minsup,rulefile.c_str());
+		output(ddp,trdb,minsup,rulefile.c_str(),bWriteLabel);
 	}
 
 	return 0;
@@ -125,7 +129,7 @@ void checkResult(const Result& result,const TrDB& trdb)
 
 }
 
-void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,const char* fOutput)
+void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,const char* fOutput,int writeLabel)
 {
 	DWORD start = GetTickCount();
 	if(algorithm.execute(trdb,nMinSupport)) //运行算法
@@ -141,7 +145,16 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,con
 			if (iter->id <0 )
 				continue;
 
-			//ofs<<trdb.getClass(iter->head)<<" ";
+			if (writeLabel == 0)
+				ofs<<"0 ";
+			else if(writeLabel == 1)
+				ofs<<trdb.getClass(iter->head)<<" ";
+			else
+			{
+				//不写
+			} 
+				
+
 			for(ItemSet::const_iterator ibody = iter->body.begin();
 				ibody !=iter->body.end();
 				++ibody)
