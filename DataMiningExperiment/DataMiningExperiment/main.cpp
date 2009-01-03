@@ -141,7 +141,7 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,con
 			if (iter->id <0 )
 				continue;
 
-			ofs<<trdb.getClass(iter->head)<<" ";
+			//ofs<<trdb.getClass(iter->head)<<" ";
 			for(ItemSet::const_iterator ibody = iter->body.begin();
 				ibody !=iter->body.end();
 				++ibody)
