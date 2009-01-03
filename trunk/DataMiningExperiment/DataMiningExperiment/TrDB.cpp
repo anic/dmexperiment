@@ -146,19 +146,11 @@ void TrDB::createFromFile(std::string filename,int maxLength)
 }
 
 
-void TrDB::createConditionalDB(const TrDB &parent, Item prefix,int nMinSupport)
-{
-	ItemSet prefixSet;
-	prefixSet.insert(prefix);
-	createConditionalDB(parent,prefixSet,nMinSupport);
-}
-
-
 bool empty(const Transaction* t) {
 	return t->items.empty();
 }
 
-void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMinSupport)
+void TrDB::createConditionalDB(const TrDB& parent,Item prefix,int nMinSupport,bool removeEmptyTrans)
 {
 	//DWORD start = GetTickCount();
 	m_nMinSupport = nMinSupport;
@@ -166,101 +158,92 @@ void TrDB::createConditionalDB(const TrDB &parent, const ItemSet &prefix,int nMi
 
 	//将前缀放入
 	this->m_prefix.insert(parent.m_prefix.begin(),parent.m_prefix.end());
-	this->m_prefix.insert(prefix.begin(),prefix.end());
+	this->m_prefix.insert(prefix);
 
-	int nNewPrefix = prefix.size();
-	if (nNewPrefix >1 ||nNewPrefix == 0)
+	
+	ItemMap::const_iterator iterf = parent.m_itemTable.find(prefix);
+	if (iterf == parent.m_itemTable.end())
+		this->m_nTransactionSize = 0;
+	else
+		this->m_nTransactionSize = iterf->second->size();
+
+	if (m_nTransactionSize == 0 || m_nTransactionSize < nMinSupport) //事务数目少于支持度，说明所有的Item都将不满足支持度
+		return;
+
+
+	TransactionIndexList possibleRemovedTrans,removedTrans;
+
+	for(ItemMap::const_iterator iter = parent.m_itemTable.begin();
+		iter!=parent.m_itemTable.end();
+		++iter)
 	{
-		throw exception("prefix must contain only 1 element.");
-	}
-	else if (nNewPrefix == 1) //如果是添加一个新的前缀，可以利用已有的头表索引加速
-	{
-		ItemMap::const_iterator iterf = parent.m_itemTable.find(*prefix.begin());
-		if (iterf == parent.m_itemTable.end())
-			this->m_nTransactionSize = 0;
-		else
-			this->m_nTransactionSize = iterf->second->size();
+		//对于每一个parent的itemtable，加入到新的m_itemTable中
 
-		if (m_nTransactionSize == 0 || m_nTransactionSize < nMinSupport) //事务数目少于支持度，说明所有的Item都将不满足支持度
-			return;
-
-
-		TransactionIndexList possibleRemovedTrans,removedTrans;
-
-		for(ItemMap::const_iterator iter = parent.m_itemTable.begin();
-			iter!=parent.m_itemTable.end();
-			++iter)
+		//将TransactionIndexList做求交运算
+		if (iterf!=iter)
 		{
-			//对于每一个parent的itemtable，加入到新的m_itemTable中
+			TransactionIndexList* temp = new TransactionIndexList();
 
-			//将TransactionIndexList做求交运算
-			if (iterf!=iter)
-			{
-				TransactionIndexList* temp = new TransactionIndexList();
+			std::set_intersection(iterf->second->begin(),
+				iterf->second->end(),
+				iter->second->begin(),
+				iter->second->end(),
+				std::insert_iterator<TransactionIndexList>(*temp, temp->begin() ));
 
-				std::set_intersection(iterf->second->begin(),
-					iterf->second->end(),
-					iter->second->begin(),
-					iter->second->end(),
-					std::insert_iterator<TransactionIndexList>(*temp, temp->begin() ));
-
-				int resultSize = temp->size();
-				if (resultSize >0)
-				{	
-					if (resultSize>= nMinSupport)
-						m_itemTable.insert(std::make_pair(iter->first,temp));
-					else
-					{
-						possibleRemovedTrans.insert(temp->begin(),temp->end());
-						delete temp;
-					}
-				}
+			int resultSize = temp->size();
+			if (resultSize >0)
+			{	
+				if (resultSize>= nMinSupport)
+					m_itemTable.insert(std::make_pair(iter->first,temp));
 				else
+				{
+					possibleRemovedTrans.insert(temp->begin(),temp->end());
 					delete temp;
+				}
 			}
+			else
+				delete temp;
 		}
-
-		this->checkPossibleRemoveTrans(possibleRemovedTrans,removedTrans);
+	}
 		
-		TransactionIndexList existTrans;
+	TransactionIndexList existTrans;
+	if (removeEmptyTrans)
+	{
+		this->checkPossibleRemoveTrans(possibleRemovedTrans,removedTrans);
 		std::set_difference(iterf->second->begin(),
 			iterf->second->end(),
 			removedTrans.begin(),
 			removedTrans.end(),
 			std::insert_iterator<TransactionIndexList>(existTrans,existTrans.begin()));
-		
-		m_nTransactionSize = existTrans.size();
-		
-
-		for(ClassMap::const_iterator iter = parent.m_classTable.begin();
-			iter!=parent.m_classTable.end();
-			++iter)
-		{
-			//对于每一个类表，做交运算
-			TransactionIndexList* temp = new TransactionIndexList();
-
-			std::set_intersection(existTrans.begin(),
-				existTrans.end(),
-				iter->second->begin(),
-				iter->second->end(),
-				std::insert_iterator<TransactionIndexList>(*temp, temp->begin() ));
-
-			if (!temp->empty())
-				m_classTable.insert(std::make_pair(iter->first,temp));
-			else
-				delete temp;
-		}
-
 	}
+	else
+	{
+		existTrans.insert(iterf->second->begin(),iterf->second->end());
+	}
+	m_nTransactionSize = existTrans.size();
+
+	for(ClassMap::const_iterator iter = parent.m_classTable.begin();
+		iter!=parent.m_classTable.end();
+		++iter)
+	{
+		//对于每一个类表，做交运算
+		TransactionIndexList* temp = new TransactionIndexList();
+
+		std::set_intersection(existTrans.begin(),
+			existTrans.end(),
+			iter->second->begin(),
+			iter->second->end(),
+			std::insert_iterator<TransactionIndexList>(*temp, temp->begin() ));
+
+		if (!temp->empty())
+			m_classTable.insert(std::make_pair(iter->first,temp));
+		else
+			delete temp;
+	}
+
+	
 	//建立Cache
 	allocateCached();
-
-	//DWORD end = GetTickCount();
-
-	//std::cout<<"Create Prefix";
-	//for(ItemSet::const_iterator iter = m_prefix.begin();iter!=m_prefix.end();++iter)
-	//	std::cout<<*iter<<" ";
-	//std::cout<<" using:"<<(end - start)<<std::endl;
 }
 
 const Transaction* TrDB::getTransactionByTid(int nTid) const

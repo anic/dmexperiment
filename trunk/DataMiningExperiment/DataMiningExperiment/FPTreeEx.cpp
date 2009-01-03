@@ -22,76 +22,27 @@ int FPTreeEx::getSupport(::Item prefix, ClassLabel label) const
 		return 0;
 }
 
-//void FPTreeEx::createConditionalFPTree(const FPTreeEx& parent,::Item prefix,int nMinSupport)
-//{
-//	if(parent.header.size() == 0) 
-//		return;
-//
-//	set<fptree::Item>::const_iterator it = parent.header.find(fptree::Item(prefix,0));
-//	if (it == parent.header.end())
-//		return;
-//
-//	//构造一个新的FPTree
-//	//设置最小支持度和输出
-//	setMinsup(nMinSupport);
-//	
-//	fptree::Item_ *i;
-//	std::vector<fptree::Transaction*> result;
-//	fptree::Transaction t(parent.header.size());
-//	
-//	for(i = it->getNext(); i; i = i->nodelink) {
-//		int l=0;
-//
-//		//TODO:有问题，不一定是最低的，投影出来会忽略了底下的项
-//		//不需要遍历2次了，在这里也是需要sort的
-//		int sup = i->supp;
-//		for(fptree::Item_ *p=i->parent; p; p = p->parent) t.t[l++] = p->id; //遍历父亲
-//		t.length = l;
-//
-//		generateTransaction(&t,sup,*i,result,parent.header.size());
-//
-//		//支持度是应该是当前的
-//		
-//		processItems(&t,sup); //将事务插入新的tree中
-//	}
-//	Prune(); //剪枝
-//
-//	for(i = it->getNext(); i; i = i->nodelink) {
-//		int l=0;
-//		for(fptree::Item_ *p=i->parent; p; p = p->parent) tmp[l++] = p->id;
-//		fptree::Transaction *t = new fptree::Transaction(l);
-//		for(int j=0; j<l; j++) t->t[j] = tmp[l-j-1];
-//		processTransaction(t,i->supp);
-//		delete t;
-//	}
-//	delete [] tmp;
-//}
-
-
-//void FPTreeEx::createConditionalFPTree(const FPTreeEx& parent,::Item prefix)
-//{
-//	return createConditionalFPTree(parent,prefix,parent.minsup);
-//}
-
-
 bool supGreater(const fptree::Item* item1,const fptree::Item* item2)
 {
 	return item1->getSupport() > item2->getSupport();
 }
 
-void FPTreeEx::createFromSourceTrDB(const TrDB& trdb,int nMinSupport)
+void FPTreeEx::createFromSourceTrDB(const TrDB& trdb)
 {
-	setMinsup(nMinSupport);
+	setMinsup(trdb.getMinSupport());
 	const TransactionSet & data = trdb.getTransaction();
 
-	for(TransactionSet::const_iterator iter = data.begin();
-		iter!=data.end();
-		++iter)
-	{
-		this->processItems(*iter);
-	}
+	//for(TransactionSet::const_iterator iter = data.begin();
+	//	iter!=data.end();
+	//	++iter)
+	//{
+	//	this->processItems(*iter);
+	//}
 
-	Prune();
+	////剪枝
+	//Prune();
+
+	this->processItems(trdb.getItemTable());
 
 	for(TransactionSet::const_iterator iter = data.begin();
 		iter!=data.end();
@@ -137,6 +88,19 @@ int FPTreeEx::processItems(const ::Transaction *t, int times)
 	return added;
 }
 
+int FPTreeEx::processItems(const ItemMap& itemMap)
+{
+	set<fptree::Item>::iterator head;
+	for(ItemMap::const_iterator iter = itemMap.begin();
+		iter!=itemMap.end();++iter)
+	{
+		head = header.insert(fptree::Item(iter->first, 0)).first;
+		head->Increment(iter->second->size());
+	}
+	return 1;
+}
+
+
 int FPTreeEx::processTransaction(std::vector<const fptree::Item *> *t,int times)
 {
 	//插入一个新事务
@@ -175,159 +139,113 @@ int FPTreeEx::processTransaction(std::vector<const fptree::Item *> *t,int times)
 }
 
 
-void FPTreeEx::createFromConditionalDB(const TrDB& trdb,int nMinSupport)
+void FPTreeEx::createFromConditionalDB(const TrDB& trdb)
 {
-	setMinsup(nMinSupport);
+	setMinsup(trdb.getMinSupport());
+	
+	//从一个头表变成另一个头表
+	this->processItems(trdb.getItemTable());
 
-	std::vector<fptree::Transaction* > buffer; //缓存所有Transacion
-	TransactionIndexList transList;
+	//std::vector<fptree::Transaction* > buffer; //缓存所有Transacion，也许以后有用
+	//TransactionIndexList transList;
+	//const ClassMap& classTable = trdb.getClassTable();
+
+	////从classtable中获得所有现在的Transacion id
+	//for(ClassMap::const_iterator iter = classTable.begin();
+	//	iter!=classTable.end();
+	//	++iter)
+	//	transList.insert(iter->second->begin(),iter->second->end());
+
+	//for(TransactionIndexList::const_iterator iter = transList.begin();
+	//	iter!=transList.end();
+	//	++iter)
+	//{
+	//	const ::Transaction* pTransaction = trdb.getSourceTrDB()->getTransaction()[*iter];
+
+	//	if(!pTransaction->items.empty()) 
+	//		this->processItems(pTransaction,1);
+
+	//}
+
+	////从头表中删除前缀的Item
+	//for(ItemSet::const_iterator iter = trdb.getPrefix().begin();
+	//	iter != trdb.getPrefix().end();
+	//	++iter)
+	//{
+	//	std::set<fptree::Item>::iterator iterf = header.find(fptree::Item(*iter,0));
+	//	if (iterf != header.end())
+	//		header.erase(iterf); 
+	//}
+
+	//std::vector<fptree::Transaction* > buffer; //缓存所有Transacion，也许以后有用
 	const ClassMap& classTable = trdb.getClassTable();
 
 	//从classtable中获得所有现在的Transacion id
 	for(ClassMap::const_iterator iter = classTable.begin();
 		iter!=classTable.end();
 		++iter)
-		transList.insert(iter->second->begin(),iter->second->end());
-
-	for(TransactionIndexList::const_iterator iter = transList.begin();
-		iter!=transList.end();
-		++iter)
 	{
-		const ::Transaction* pTransaction = trdb.getSourceTrDB()->getTransaction()[*iter];
 
-		if(!pTransaction->items.empty()) 
-			this->processItems(pTransaction,1);
-
-	}
-
-	//从头表中删除前缀的Item
-	for(ItemSet::const_iterator iter = trdb.getPrefix().begin();
-		iter != trdb.getPrefix().end();
-		++iter)
-	{
-		std::set<fptree::Item>::iterator iterf = header.find(fptree::Item(*iter,0));
-		if (iterf != header.end())
-			header.erase(iterf); 
-	}
-
-	Prune();
-
-	for(TransactionIndexList::const_iterator iter = transList.begin();
-		iter!=transList.end();
-		++iter)
-	{
-		const ::Transaction* pTransaction = trdb.getSourceTrDB()->getTransaction()[*iter];
-
-		std::vector<const fptree::Item *> list;
-		list.reserve(pTransaction->items.size());
-
-		for(ItemSet::const_iterator it = pTransaction->items.begin();
-			it !=pTransaction->items.end();++it)
+		for(TransactionIndexList::const_iterator iterTrans = iter->second->begin();
+			iterTrans!=iter->second->end();
+			++iterTrans)
 		{
-			//将::Item转为fptree::Item来查找
-			std::set<fptree::Item>::const_iterator iterf = header.find(fptree::Item(*it,0));
-			if ( iterf!= header.end())
-				list.push_back(&(*iterf)); 
+			const ::Transaction* pTransaction = trdb.getSourceTrDB()->getTransaction()[*iterTrans];
+
+
+			std::vector<const fptree::Item *> list;
+			list.reserve(pTransaction->items.size());
+
+			for(ItemSet::const_iterator it = pTransaction->items.begin();
+				it !=pTransaction->items.end();++it)
+			{
+				//将::Item转为fptree::Item来查找
+				std::set<fptree::Item>::const_iterator iterf = header.find(fptree::Item(*it,0));
+				if (iterf!= header.end())
+					list.push_back(&(*iterf)); 
+			}
+
+			sort(list.begin(), list.end(),supGreater); //sort by support
+
+			if(!list.empty()) 
+				this->processTransaction(&list);
 		}
-
-		sort(list.begin(), list.end(),supGreater); //sort by support
-
-		if(!list.empty()) 
-			this->processTransaction(&list);
 	}
-}
 
-void FPTreeEx::createFromTrDB(const TrDB& trdb,int nMinSupport)
-{
-	if (trdb.isSource())
-		createFromSourceTrDB(trdb,nMinSupport);
-	else
-		createFromConditionalDB(trdb,nMinSupport);
+	
+	//for(TransactionIndexList::const_iterator iter = transList.begin();
+	//	iter!=transList.end();
+	//	++iter)
+	//{
+	//	const ::Transaction* pTransaction = trdb.getSourceTrDB()->getTransaction()[*iter];
 
+	//	std::vector<const fptree::Item *> list;
+	//	list.reserve(pTransaction->items.size());
+
+	//	for(ItemSet::const_iterator it = pTransaction->items.begin();
+	//		it !=pTransaction->items.end();++it)
+	//	{
+	//		//将::Item转为fptree::Item来查找
+	//		std::set<fptree::Item>::const_iterator iterf = header.find(fptree::Item(*it,0));
+	//		if ( iterf!= header.end())
+	//			list.push_back(&(*iterf)); 
+	//	}
+
+	//	sort(list.begin(), list.end(),supGreater); //sort by support
+
+	//	if(!list.empty()) 
+	//		this->processTransaction(&list);
+	//}
 }
 
 void FPTreeEx::createFromTrDB(const TrDB& trdb)
 {
-	createFromTrDB(trdb,trdb.getMinSupport());
+	if (trdb.isSource())
+		createFromSourceTrDB(trdb);
+	else
+		createFromConditionalDB(trdb);
+
 }
-
-//bool supGreater(const fptree::Item_ * item1,const fptree::Item_ * item2)
-//{
-//	return item1->supp > item2->supp;
-//}
-//
-//
-//void FPTreeEx::getHeader(std::vector<::Item>& output,bool bSortedSupport) const
-//{
-//	if (!bSortedSupport)
-//	{
-//		output.reserve(header.size());
-//		for(set<fptree::Item>::const_iterator iter = header.begin();
-//			iter!=header.end();
-//			++iter)
-//			output.push_back(this->remap[iter->getId()]);
-//		return;
-//	}
-//	else
-//	{
-//		std::vector<fptree::Item_ *> list;
-//		list.reserve(header.size());
-//		for(set<fptree::Item>::const_iterator iter = header.begin();
-//			iter!=header.end();
-//			++iter)
-//		{
-//			list.push_back(iter->getItem());
-//		}
-//		std::sort(list.begin(),list.end(),supGreater);
-//
-//		output.reserve(list.size());
-//		for(std::vector<fptree::Item_ *>::const_iterator iter = list.begin();
-//			iter!=list.end();
-//			++iter)
-//		{
-//			output.push_back(this->remap[(*iter)->id]);
-//		}
-//		return;
-//	}
-//}
-
-////获得Item的表，需要访问支持度，根据Item自然排序，并能快速定位
-//void FPTreeEx::getHeader(std::map<::Item,int>& output) const
-//{
-//	for(std::set<fptree::Item>::const_iterator iter = header.begin();
-//			iter!=header.end();
-//			++iter)
-//	{
-//		output.insert(std::make_pair(this->remap[iter->getId()],iter->getSupport()));
-//	}
-//	
-//}
-//
-//bool itemSupGreater(const Item_Support& item1,const Item_Support& item2)
-//{
-//	return item1.support>item2.support;
-//}
-//
-////获得Item的表，需要访问支持度，并可以选择根据支持度排降序
-//void FPTreeEx::getHeader(std::vector<Item_Support>& output,bool bSortedBySupport) const
-//{
-//	output.reserve(header.size());
-//	for(std::set<fptree::Item>::const_iterator iter = header.begin();
-//			iter!=header.end();
-//			++iter)
-//	{
-//		output.push_back(Item_Support(this->remap[iter->getId()],iter->getSupport()));
-//	}
-//
-//	if (bSortedBySupport)
-//		std::sort(output.begin(),output.end(),itemSupGreater);
-//}
-
-
-//void FPTreeEx::removeItem(::Item item)
-//{
-//	//TODO: 还没实现
-//}
 
 void FPTreeEx::printOnConsole() const
 {
@@ -371,103 +289,5 @@ void FPTreeEx::getPotentialPrefix(::Item item,std::vector<ItemSet_Support>& out)
 	}
 }
 
-//int FPTreeEx::generateTransaction(fptree::Transaction* parent,int nParentSup,
-//								   fptree::Item_& itemNode,std::vector<fptree::Transaction*>& result,int maxItemSize)
-//{
-//	
-//	fptree::Transaction* lastTrans = parent;
-//	fptree::Item_* last = &itemNode;
-//	int sup = nParentSup;
-//	
-//	if (itemNode.supp!= nParentSup)
-//	{
-//		int sumsup = 0;
-//		for(std::set<fptree::Item>::const_iterator iter = itemNode.children->begin();
-//			iter!=itemNode.children->end();
-//			++iter)
-//		{
-//			sumsup += iter->getSupport();
-//		}
-//
-//		if (sumsup < itemNode.supp) //下一层比当前小
-//		{
-//			fptree::Transaction* newTrans = new fptree::Transaction(maxItemSize);
-//			memcpy(newTrans->t,parent->t,parent->length);
-//			newTrans->length = parent->length;
-//			newTrans->t[(newTrans->length)++] = itemNode.id;
-//			//缓存记住所有的transaction
-//			result.push_back(newTrans);
-//			processItems(newTrans, itemNode.supp - sumsup); //将事务插入新的tree中
-//			lastTrans = newTrans;
-//
-//		}
-//		//else sumsup == itemNode.supp留待下一层解决
-//	}
-//
-//	int nChildren = itemNode.children->size();
-//	if(nChildren == 1)
-//	{
-//		//向下找，找到其中之一：
-//		//1 和当前支持度不同的，
-//		//2 分枝
-//		fptree::Transaction* newTrans = new fptree::Transaction(maxItemSize);
-//		memcpy(newTrans->t,parent->t,parent->length);
-//		newTrans->length = parent->length;
-//
-//		sup = itemNode.supp;
-//		fptree::Item_* p = &itemNode;
-//		while((p->children->size()) == 1)
-//		{
-//			newTrans->t[(newTrans->length)++] = p->id;
-//
-//			p = (p->children->begin())->getItem();
-//			if (p->supp != sup)
-//				break;
-//		}
-//
-//		if(p->supp != sup) //如果支持度不同，
-//		{
-//			result.push_back(newTrans);
-//			processItems(newTrans,sup); //将事务插入新的tree中
-//			generateTransaction(newTrans,sup,*p,result,maxItemSize);
-//
-//			lastTrans = newTrans;
-//		}
-//		else //支持度相同，但是
-//		{
-//			newTrans->t[(newTrans->length)++] = p->id;
-//			result.push_back(newTrans);
-//			processItems(newTrans,sup); 
-//
-//			lastTrans = newTrans;
-//
-//			if (p->children->size() > 1) 
-//				last = p;
-//	
-//			//else p->getChildren() == 1 || 0 不用做，因为支持度相同，肯定会往下走
-//		}
-//	}
-//	else if(nChildren > 1)
-//	{
-//		fptree::Transaction* newTrans = new fptree::Transaction(maxItemSize);
-//		memcpy(newTrans->t,parent->t,parent->length);
-//		newTrans->length = parent->length;
-//		newTrans->t[(newTrans->length)++] = itemNode.id;
-//		lastTrans = newTrans;
-//	}
-//	
-//	if (last->children->size() > 0)
-//	{
-//		for(std::set<fptree::Item>::const_iterator iter = last->children->begin();
-//			iter!=last->children->end();
-//			++iter)
-//		{
-//			generateTransaction(lastTrans,sup,*iter->getItem(),result,maxItemSize);
-//
-//		}
-//	}
-//
-//	return 0;
-//}
 
 

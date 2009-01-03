@@ -28,28 +28,11 @@ public:
 
 	int getMinSupport()const{ return minsup;}
 
-	////效率较低，获得Item的表，无需访问支持度，传入时候不对output进行清空
-	//void getHeader(std::vector<::Item>& output,bool bSortedBySupport =false) const;
-
-	////效率较低，获得Item的表，需要访问支持度，并可以选择根据支持度排降序，传入时候不对output进行清空
-	//void getHeader(std::vector<Item_Support>& output,bool bSortedBySupport =false) const;
-
-	////效率较低，获得Item的表，需要访问支持度，根据Item自然排序，并能快速定位，传入时候不对output进行清空
-	//void getHeader(std::map<::Item,int>& output) const;
-
 	//效率较高，获得头表，内容是ItemNode,根据的是Item的编号排序，而非支持度
 	const std::set<ItemNode>& getHeader() const { return header;};
 
-	//void removeItem(::Item item);
-
+	
 	int getSupport(::Item prefix,ClassLabel label) const;
-
-	//void createConditionalFPTree(const FPTreeEx& parent,Item prefix,int nMinSupport);
-
-	//使用parent的支持度做投影
-	//void createConditionalFPTree(const FPTreeEx& parent,Item prefix);
-
-	void createFromTrDB(const TrDB& trdb,int nMinSupport);
 
 	void createFromTrDB(const TrDB& trdb);
 
@@ -59,7 +42,7 @@ public:
 
 protected:
 
-
+	int processItems(const ItemMap& itemMap);
 
 	int processItems(const ::Transaction *t, int times = 1);
 
@@ -71,9 +54,9 @@ protected:
 		fptree::Item_& itemNode,std::vector<fptree::Transaction*>& result,int maxItemSize);*/
 
 
-	void createFromSourceTrDB(const TrDB& trdb,int nMinSupport);
+	void createFromSourceTrDB(const TrDB& trdb);
 
-	void createFromConditionalDB(const TrDB& trdb,int nMinSupport);
+	void createFromConditionalDB(const TrDB& trdb);
 
 	//void ReOrder(){ __super::ReOrder();}
 	//int Prune(){ return __super::Prune(); }
