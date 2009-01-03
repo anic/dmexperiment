@@ -21,7 +21,7 @@ rem type - 1是用harmony；其他用ddpmine
 rem label - 1是输出标签; 否则输出0
 
 @echo 正在执行算法...
-DataMiningExperiment.exe %TRAIN%_%NUM%_%i%.dat %MIN_SUP% 1 %OUTPUT_DIR%rule%i%.txt %TYPE% 0
+DataMiningExperiment.exe %TRAIN%_%NUM%_%i%.dat %MIN_SUP% 1 %OUTPUT_DIR%rule%i%.txt %TYPE% 1
 
 @echo 进行学习...
 svm_multiclass_learn -c 0.01 %OUTPUT_DIR%rule%i%.txt %OUTPUT_DIR%model%i%.txt
