@@ -11,7 +11,7 @@ set TYPE=1
 DataMiningExperiment.exe %TRAIN% %MIN_SUP% 1 rule.txt %TYPE% 1
 
 @echo 进行学习...
-svm_multiclass_learn -c 0.01 rule.txt model.txt
+svm_multiclass_learn -c 0.01 -t 1 -d 3 rule.txt model.txt
 del result_static.txt
 svm_multiclass_classify %TEST% model.txt result.txt >> result_static.txt
 @echo 进行分类...
@@ -19,4 +19,4 @@ type result_static.txt
 @echo ================================================================================
 @echo 上述结果保存在result_static.txt 和 result.txt 中
 @echo ================================================================================
-
+pause
