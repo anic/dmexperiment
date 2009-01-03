@@ -133,24 +133,7 @@ public:
 	//作为测试，读取最多maxLength行
 	void createFromFile(std::string filename,int maxLength);
 
-	/*!
-	 * \brief
-	 * 创建投影数据库
-	 * 
-	 * \param parent
-	 * 上级投影数据库
-	 * 
-	 * \param prefix
-	 * 投影“添加的”前缀集合
-	 * 
-	 * \param nMinSupport
-	 * 最小支持度
-	 *
-	 * \remarks
-	 * 新的前缀是在上级投影数据库的前缀上，加上prefix；投影的时候会将不满足最小支持度的item删除
-	 * 
-	 */
-	void createConditionalDB(const TrDB& parent,const ItemSet& prefix,int nMinSupport);
+
 
 	
 	/*!
@@ -170,7 +153,7 @@ public:
 	 * 新的前缀是在上级投影数据库的前缀上，加上prefix；投影的时候会将不满足最小支持度的item删除
 	 * 
 	 */
-	void createConditionalDB(const TrDB& parent,Item prefix,int nMinSupport);
+	void createConditionalDB(const TrDB& parent,Item prefix,int nMinSupport,bool removeEmptyTrans = false);
 
 	void removeItem(Item item);
 

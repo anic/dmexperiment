@@ -21,6 +21,76 @@ using namespace std;
 #include "DMAlgorithm.h"
 #include "FPTreeEx.h"
 
+void checkResult(const Result& result,const TrDB& trdb);
+void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,const char* fOutput);
+
+/*
+dataset minsup k output
+dataset - 数据集
+minsup - 最小相对支持度
+k - 为每个实例最多挖掘的规则数目
+output - 输出的规则文件
+*/
+int _tmain(int argc, _TCHAR* argv[])
+{
+
+	//创建了数据库，作为测试，读取10行
+	int len = -1;
+	unsigned int minsup = 0;
+	std::string filename,rulefile;
+	int type = 1;
+	if (argc>=5)
+	{
+		filename = argv[1];
+		minsup = atoi(argv[2]);
+		rulefile = argv[4];
+		if (argc >=6 )
+			type = atoi(argv[5]);
+		else
+			type = 1;
+	}
+	
+	/*测试代码*/
+	/*minsup = 0;
+	len = 10;*/
+	
+	
+	
+	DWORD start = GetTickCount();
+	TrDB trdb;
+	/*创建数据库*/
+	trdb.createFromFile(filename,len);
+	trdb.setMinSupport(minsup);
+	DWORD end = GetTickCount();
+
+	std::cout<<"DB created using "<<(end - start)<<"ms"<<std::endl;
+
+
+	//TrDB cdb;
+	//cdb.createConditionalDB(trdb,3,trdb.getMinSupport());
+	//
+	//FPTreeEx fptree;
+	//fptree.createFromTrDB(cdb);
+	//fptree.printOnConsole();
+	
+	/*
+	std::vector<ItemSet_Support> out;
+	fptree.getPotentialPrefix(60,out);*/
+
+	if (type == 1)
+	{
+		HarmonyAlgorithm har;
+		output(har,trdb,minsup,rulefile.c_str());
+	}
+	else
+	{
+		DDPMineAlgorithm ddp;
+		output(ddp,trdb,minsup,rulefile.c_str());
+	}
+
+	return 0;
+}
+
 void checkResult(const Result& result,const TrDB& trdb)
 {
 	for(Result::const_iterator iter = result.begin();
@@ -55,7 +125,7 @@ void checkResult(const Result& result,const TrDB& trdb)
 
 }
 
-void output(DMAlgorithm& algorithm,const TrDB& trdb,int nMinSupport)
+void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,const char* fOutput)
 {
 	DWORD start = GetTickCount();
 	if(algorithm.execute(trdb,nMinSupport)) //运行算法
@@ -64,7 +134,7 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,int nMinSupport)
 		std::cout<<"Algorithm executes "<<(end - start)<<"ms"<<std::endl;
 		const Result& result = algorithm.getResult();
 		//遍历结果
-		std::ofstream ofs("rule.txt");
+		std::ofstream ofs(fOutput);
 		for(Result::const_iterator iter = result.begin();
 			iter!=result.end();++iter)
 		{ 
@@ -84,43 +154,3 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,int nMinSupport)
 		ofs.close();
 	} 
 }
-
-int _tmain(int argc, _TCHAR* argv[])
-{
-
-	//创建了数据库，作为测试，读取10行
-	int len = 10;
-	int minsup = 0;
-	std::string filename = "UKchess_train_10_1.dat";
-	
-	
-	/*以下这段请保留不要删除，作为正式版本需要根据读入字符串处理*/
-	//if (argc>=2 )
-	//	filename = argv[1];
-	//if (argc>=3)
-	//	minsup = atoi(argv[2]);
-
-	TrDB trdb;
-	trdb.createFromFile(filename,len);
-	trdb.setMinSupport(minsup);
-
-	TrDB cdb;
-	cdb.createConditionalDB(trdb,21,0);
-
-	FPTreeEx fptree;
-	fptree.createFromTrDB(trdb);
-	fptree.printOnConsole();
-	
-
-	std::vector<ItemSet_Support> out;
-	fptree.getPotentialPrefix(60,out);
-
-	DDPMineAlgorithm ddp;
-	HarmonyAlgorithm har;
-
-	//output(ddp,trdb,2);
-	output(har,trdb,minsup);
-
-	return 0;
-}
-
