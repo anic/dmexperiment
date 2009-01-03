@@ -16,6 +16,6 @@ set TYPE=1
 set OUTPUT_DIR=%DIR%%TYPE%\
 
 md %OUTPUT_DIR%
-for /L %%i in (1,1,%NUM%) DO (SVMTest_single.bat %DIR%%TRAIN% %DIR%%TEST% %NUM% %MIN_SUP% %%i %OUTPUT_DIR%)
+for /L %%i in (1,1,%NUM%) DO (SVMTest_single.bat %DIR%%TRAIN% %DIR%%TEST% %NUM% %MIN_SUP% %%i %OUTPUT_DIR% %TYPE%)
 pause
 
