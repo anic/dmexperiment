@@ -49,7 +49,6 @@ void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const Ite
 	if (trdb.getSize() == 0)
 		return;
 
-	this->m_result.push_back(Rule())
 
 	const std::set<ItemNode>& node = fptree.getHeader();
 	std::set<ItemNode>::const_iterator it; 
