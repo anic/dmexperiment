@@ -57,9 +57,9 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, std::map<Item,boo
 		{
 			//create a new rule
 			Rule r(m_result.size());
-			r.body = trdb.getPrefix(); 
+			r.body = trdb.getPrefix(); //空间释放问题, to cfj:这里会拷贝一份数据
 			r.head = (*ic).first;
-			r.support = trdb.getSupport(r.head); 
+			r.support = trdb.getSupport(r.head); //修改为get size
 			if(r.support > 0)
 			{				
 				double conf = (r.support + 0.0)/trdb.getSize();
@@ -201,7 +201,8 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, std::map<Item,boo
 				if(upSupP > 1)
 					upSupP = 1;
 				
-				for(TransactionIndexList::const_iterator it = iter->second->begin(); it != iter->second->end(); ++it)
+				for(TransactionIndexList::const_iterator it = iter->second->begin()
+					; it != iter->second->end(); ++it)
 				{
 					//int tid = iter->second.at(it);
 					if(_hccrSet[*it]._hConf < upSupP)
@@ -245,6 +246,44 @@ void HarmonyAlgorithm::ruleminer(const TrDB& trdb,int min_sup, std::map<Item,boo
 			ruleminer(cdb, min_sup, newMinedItemMap, sortAlg);	
 			newMinedItemMap.insert(::make_pair(it->item, true));
 		}
+	
+//
+//		ItemCRTable itCRTable;
+//		switch(sortAlg)
+//		{
+//		case MCD:
+//			{
+//				setItCRTalbeMCD(trdb,itTable,itCRTable);
+//				break;
+//			}
+//		case EA:
+//			{
+//				setItCRTalbeEA(trdb,itTable,itCRTable);
+//				break;
+//			}
+//		default:// CRA:
+//			{
+//				setItCRTalbeCRA(trdb,itTable,itCRTable);
+//				break;
+//			}
+//		}
+//		sort(itCRTable.begin(),itCRTable.end(), ItemCRCompare());  
+//		std::map<Item,bool> newMinedItemMap;
+//		for(ItemCRTable::iterator it =  itCRTable.begin(); it!= itCRTable.end(); ++it) //用++it比it++快
+//		{			
+//			
+//			TrDB cdb;
+//			cdb.createConditionalDB(trdb, it->first, min_sup);			
+//			ruleminer(cdb, min_sup, newMinedItemMap, sortAlg);	
+//			newMinedItemMap.insert(::make_pair(it->first, true));
+////#if _DEBUG
+////			std::cout<<"projecting db ";
+////			for(ItemSet::const_iterator ip = cdb.getPrefix().begin(); ip != cdb.getPrefix().end(); ++ip)
+////				std::cout<<*ip<<" ";
+////			std::cout<<std::endl;
+////#endif
+//			
+//		}
 	}
 }
 
@@ -300,34 +339,15 @@ bool HarmonyAlgorithm::setItCRVTableCRA(const TrDB& trdb, ItemMap& itTable,ItemC
 	double mean_supP = 0.0;
 	double mean_supPx = 0.0;
 	int k =trdb.getClassTable().size();
-	
-	bool emptyPre = (trdb.getPrefix().size() == 0);
 	for(ItemMap::iterator iter = itTable.begin(); iter!=itTable.end(); ++iter)
-	{
-		ItemCRV it;
-		it.item = iter->first;
-		it.sup = iter->second->size();
-		if(emptyPre)
-		{
-			//前缀为空，按sup降序排序
-			it.val = 1;
-			itCRVTable.push_back(it);	
-			continue;
-		}
-
+	{		
 		mean_supPx = (iter->second->size() +0.0)/k;
 		int supPC = 0;
-		double sigmaP = 0.0;
 		for(ClassMap::const_iterator ic = trdb.getClassTable().begin(); ic != trdb.getClassTable().end(); ++ic)
 		{			
-			int temp = ic->second->size();
-			sigmaP +=temp*temp;
-			supPC += temp;			
+			supPC += ic->second->size();			
 		}
 		mean_supP = (supPC+0.0)/k;
-		sigmaP = sigmaP/k - mean_supP*mean_supP;
-		if(sigmaP>=0)
-			sigmaP = sqrt(sigmaP);
 
 		int supPxC = 0;
 		double temp = 0;
@@ -341,24 +361,20 @@ bool HarmonyAlgorithm::setItCRVTableCRA(const TrDB& trdb, ItemMap& itTable,ItemC
 			temp2 += supPxC*supPxC;
 		}
 		sigmaPx =  (temp2+0.0)/k - mean_supPx*mean_supPx;
+
+		ItemCRV it;
+		it.item = iter->first;
+		it.sup = iter->second->size();
 		
 		if(sigmaPx > 0)
-			sigmaPx = sqrt(sigmaPx);
-		double sigma = sigmaP*sigmaPx;
-		if(sigma> 0)
 		{
-			it.val = temp/(sigma);
+			sigmaPx = sqrt(sigmaPx);
+			it.val = temp/sigmaPx;
 			itCRVTable.push_back(it);			
 		}
-		else if(sigma == 0 && temp == 0)
+		else if(sigmaPx == 0)
 		{
-			it.val = 1;
-			itCRVTable.push_back(it);
-			//itCRTable.push_back(::make_pair(iter->first,1000000));
-		}
-		else if(sigma == 0)
-		{
-			it.val = 1;
+			it.val = 1000000;
 			itCRVTable.push_back(it);
 			//itCRTable.push_back(::make_pair(iter->first,1000000));
 		}

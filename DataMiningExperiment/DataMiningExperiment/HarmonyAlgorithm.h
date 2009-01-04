@@ -56,41 +56,42 @@ public:
 	bool operator()(const ItemCRV& lhs, //用于排序的比较函数
 		const ItemCRV& rhs) const
 	{	 
+		//if(lhs.val < rhs.val)// || (lhs.val == rhs.val && lhs.sup > rhs.sup))
 		if(lhs.val < rhs.val || (lhs.val == rhs.val && lhs.sup > rhs.sup))
 			return true;
 		return false;
 	}
 
 };
-
-typedef std::pair<Item, double> ItemCR;
-
-//typedef std
-class ItemCRCompare
-	{  //比较函数的类
-
-private:
-	bool valLess(const ItemCR::second_type &k1, //“实际”的比较函数
-			const ItemCR::second_type &k2) const
-	{
-		return k1 < k2;
-	}
-public:
-
-	bool operator()(const ItemCR& lhs, //用于排序的比较函数
-		const ItemCR& rhs) const
-	{	 
-		return valLess(lhs.second, rhs.second); //keyLess见后面定义
-	}
-
-};
+//
+//typedef std::pair<Item, double> ItemCR;
+//
+////typedef std
+//class ItemCRCompare
+//	{  //比较函数的类
+//
+//private:
+//	bool valLess(const ItemCR::second_type &k1, //“实际”的比较函数
+//			const ItemCR::second_type &k2) const
+//	{
+//		return k1 < k2;
+//	}
+//public:
+//
+//	bool operator()(const ItemCR& lhs, //用于排序的比较函数
+//		const ItemCR& rhs) const
+//	{	 
+//		return valLess(lhs.second, rhs.second); //keyLess见后面定义
+//	}
+//
+//};
 enum ESortAlg
 {
 	MCD = 0,//maximum confidence descending order
 	EA,//entropy ascending order
 	CRA//correlation coefficient ascending order
 };
-typedef std::vector<ItemCR> ItemCRTable;
+//typedef std::vector<ItemCR> ItemCRTable;
 typedef std::vector<ItemCRV> ItemCRVTable;
 
 /*!
