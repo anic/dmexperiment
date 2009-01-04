@@ -541,10 +541,136 @@ ClassLabel TrDB::getClass(ClassLabel alias)const
 
 int TrDB::getSupport(const ItemSet& items,ClassLabel label) const
 {
-	return 0;
+	if (items.empty())
+		return 0;
+
+	TransactionIndexList* result = NULL;
+	bool needDel = false; //是否需要del result这个指针
+	for(ItemSet::const_iterator iter = items.begin();
+		iter!=items.end();++iter)
+	{
+		ItemMap::const_iterator iterf = m_itemTable.find(*iter);
+		if (iterf!=m_itemTable.end())
+		{
+			if(result == NULL)
+				result = iterf->second;
+			else
+			{
+				TransactionIndexList* newResult = new TransactionIndexList();
+
+				//与之前的结果做交运算
+				std::set_intersection(result->begin(),result->end(),iterf->second->begin(),iterf->second->end(),
+					std::insert_iterator<TransactionIndexList>(*newResult, newResult->begin() ));
+				
+				if (needDel)
+					delete result;
+				
+				result = newResult;
+				needDel = true;
+
+				//如果在其中交已经为空，则支持度为0，不需要继续了
+				if (result->empty())
+				{
+					delete result;
+					return 0;
+				}
+
+			}
+		}
+		else
+		{
+			//如果items中的项，不在数据库中出现，则表示这个items的支持度为0
+			if (needDel)
+				delete result;
+
+			return 0;
+		}
+	}
+
+	if (result == NULL)
+		return 0;
+	else
+	{
+		ClassMap::const_iterator iterClass = m_classTable.find(label);
+		if (iterClass!=m_classTable.end())
+		{
+			TransactionIndexList newResult;
+
+			//与之前的结果做交运算
+			std::set_intersection(result->begin(),result->end(),iterClass->second->begin(),iterClass->second->end(),
+			std::insert_iterator<TransactionIndexList>(newResult, newResult.begin() ));
+				
+			if (needDel)
+				delete result;
+				
+			return newResult.size();
+		}
+		else
+		{
+			if (needDel)
+				delete result;
+			return 0; //没有标签
+		}
+	}
+
 }
 
 int TrDB::getSupport(const ItemSet& items) const
 {
-	return 0;
+	if (items.empty())
+		return 0;
+
+	TransactionIndexList* result = NULL;
+	bool needDel = false; //是否需要del result这个指针
+	for(ItemSet::const_iterator iter = items.begin();
+		iter!=items.end();++iter)
+	{
+		ItemMap::const_iterator iterf = m_itemTable.find(*iter);
+		if (iterf!=m_itemTable.end())
+		{
+			if(result == NULL)
+				result = iterf->second;
+			else
+			{
+				TransactionIndexList* newResult = new TransactionIndexList();
+
+				//与之前的结果做交运算
+				std::set_intersection(result->begin(),result->end(),iterf->second->begin(),iterf->second->end(),
+					std::insert_iterator<TransactionIndexList>(*newResult, newResult->begin() ));
+				
+				if (needDel)
+					delete result;
+				
+				result = newResult;
+				needDel = true;
+
+				//如果在其中交已经为空，则支持度为0，不需要继续了
+				if (result->empty())
+				{
+					delete result;
+					return 0;
+				}
+
+			}
+		}
+		else
+		{
+			//如果items中的项，不在数据库中出现，则表示这个items的支持度为0
+			if (needDel)
+				delete result;
+
+			return 0;
+		}
+	}
+
+	if (result == NULL)
+		return 0;
+	else
+	{
+		int nResult = result->size();
+		if (needDel)
+			delete result;
+
+		return nResult;
+	}
 }
