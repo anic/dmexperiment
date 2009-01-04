@@ -49,19 +49,20 @@ void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const Ite
 	if (trdb.getSize() == 0)
 		return;
 
-	std::set<Item> node = fptree.getHeader();
-	std::set<ItemNode>::iterator it; 
-	for (it = node.begin(); it != node.end(); it++)
+	this->m_result.push_back(Rule())
+
+	const std::set<ItemNode>& node = fptree.getHeader();
+	std::set<ItemNode>::const_iterator it; 
+	for (it = node.begin(); it != node.end(); ++it)
 	{
-		Item *nodeit = it->getItem();
 		std::vector<ItemSet_Support> out;
-		fptree.getPotentialPrefix(nodeit, out);
+		fptree.getPotentialPrefix(it->getId(), out);
 		std::vector<ItemSet_Support>::iterator vit;
 		for (vit = out.begin(); vit!=out.end(); vit++)
 		{
-			conbest->items.insert(a.begin(),a.end());
-			conbest->items.insert(vit->items.begin(), vit->items.end());
-			conbest->support = vit->support;
+			conbest.items.insert(a.begin(),a.end());
+			conbest.items.insert(vit->items.begin(), vit->items.end());
+			conbest.support = vit->support;
 
 			double IG = computeIG(trdb, conbest);
 			
@@ -72,7 +73,8 @@ void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const Ite
 			}
 
 			TrDB cdb;
-			double IGup = cdb.createConditionalDB(trdb, prefix, min_sup);
+			cdb.createConditionalDB(trdb, *prefix.begin(), min_sup);
+			double IGup = computeIGup(trdb, conbest);
 			if (maxIG >= IGup)
 			{
 
@@ -89,26 +91,39 @@ void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const Ite
 
 double DDPMineAlgorithm::computeIG(const TrDB &trdb, ItemSet_Support &iset)
 {
+	const ClassMap& classmap = trdb.getClassTable();
+	for(ClassMap::const_iterator iter = classmap.begin();iter!=classmap.end();++iter)
+	{
+		//iter->first //0,1
+		//iter->second->size()
+	}
 	//compute the entroy: need the class label
 
 	//compute conditional entroy
 
 	//entroy - conditional entroy
+	return 0;
 }
 
 void DDPMineAlgorithm::update_tree(TrDB &trdb, const ItemSet &iset)
 {
+	trdb.removeItem(1);
 }
 
-double DDPMineAlgorithm::computeIGup(const TrDB &trdb, ItemSet_Support $iset)
+double DDPMineAlgorithm::computeIGup(const TrDB &trdb, ItemSet_Support &iset)
 {
+	const ClassMap& classmap = trdb.getClassTable();
+	int p = trdb.getSupport(1);
+	trdb.getSize();
 	//double p = P(c = 1)
+	trdb.getSupport(iset.items);
 	//double thita = P(support/size)
 
 	//if thita <= p
 	//double lb = (thita -1)((p-thita)/(1-thita)*log2((p-thita)/(1-thita)) + (1-p)/(1-thita) * log2((1-p)/(1-thita)));
 	//else
 	//double lb = -p*log2(p/thita) - (thita - p)log2(1-p/thita);
+	return 0;
 }
 
 void DDPMineAlgorithm::computeTa(const TrDB &trdb, ItemSet &iset)
