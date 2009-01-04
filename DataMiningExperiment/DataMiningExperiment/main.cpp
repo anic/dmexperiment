@@ -38,7 +38,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int len = 10;
 	unsigned int minsup = 0;
 	std::string filename,rulefile;
-	int type = 1;
+	int type = 2;
 	int bWriteLabel = 2; //0表示默认写0，1 表示写标签，2表示不写，3表示1改成-1，2改成1
 	if (argc>=5)
 	{
@@ -55,8 +55,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	
 	/*测试代码*/
-	/*minsup = 0;
-	len = 10;*/
+	minsup = 2;
+	len = 10;
 	
 	
 	
@@ -69,10 +69,21 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	std::cout<<"DB created using "<<(end - start)<<"ms"<<std::endl;
 
+	//TrDB cdb1 = trdb;
+	////cdb1.removeItem(3);
+	//ItemSet items;
+	//items.insert(2);
+	//items.insert(3);
+	//cdb1.removeItem(items);
+
+	//ItemSet items2;
+	//items2.insert(11);
+	//items2.insert(12);
+	//cdb1.removeItem(items2);
 
 	//TrDB cdb;
 	//cdb.createConditionalDB(trdb,3,trdb.getMinSupport());
-	//
+	
 	//FPTreeEx fptree;
 	//fptree.createFromTrDB(cdb);
 	//fptree.printOnConsole();

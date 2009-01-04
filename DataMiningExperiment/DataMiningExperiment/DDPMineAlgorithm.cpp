@@ -14,7 +14,7 @@ DDPMineAlgorithm::~DDPMineAlgorithm(void)
 bool DDPMineAlgorithm::execute(const TrDB& trdb,int nSupport)
 {
 	//算法结果放在m_result中
-	trdb_local = TrDB(trdb);
+	trdb_local.clone(trdb);
 	prefix = ItemSet();
 	DDPMine(trdb_local, nSupport);
 	return true;

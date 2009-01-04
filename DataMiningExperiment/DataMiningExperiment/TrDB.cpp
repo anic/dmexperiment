@@ -21,6 +21,11 @@ TrDB::TrDB(void)
 
 TrDB::TrDB(const TrDB& trdb)
 {
+	clone(trdb);
+}
+
+void TrDB::clone(const TrDB& trdb)
+{
 	this->m_bSource = false;
 
 	//TODO:这里使用拷贝好吗？
@@ -49,7 +54,6 @@ TrDB::TrDB(const TrDB& trdb)
 	//this->m_transactionSet 无需设置
 	this->m_pClassRemap = NULL;
 	allocateCached();
-
 }
 
 TrDB::~TrDB(void)
