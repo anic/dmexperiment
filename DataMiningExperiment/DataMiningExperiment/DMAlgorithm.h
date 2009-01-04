@@ -2,6 +2,7 @@
 #include <vector>
 #include "common.h"
 #include "TrDB.h"
+#include "FPTreeEx.h"
 
 typedef std::vector<Rule> Result;
 
