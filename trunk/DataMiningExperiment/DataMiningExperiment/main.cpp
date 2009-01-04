@@ -35,7 +35,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 
 	//创建了数据库，作为测试，读取10行
-	int len = -1;
+	int len = 10;
 	unsigned int minsup = 0;
 	std::string filename,rulefile;
 	int type = 1;
