@@ -162,9 +162,10 @@ public:
 
 	const TrDB* getSourceTrDB()const { return m_pRawTrDB;}
 
-	
+	//给定一个Item集合和类标签，获得对应的支持度	
 	int getSupport(const ItemSet& items,ClassLabel label) const;
 
+	//给定一个Item集合，不分类标签，获得对应的支持度
 	int getSupport(const ItemSet& items) const;
 
 
