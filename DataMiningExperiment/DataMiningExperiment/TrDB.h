@@ -162,6 +162,11 @@ public:
 
 	const TrDB* getSourceTrDB()const { return m_pRawTrDB;}
 
+	
+	int getSupport(const ItemSet& items,ClassLabel label) const;
+
+	int getSupport(const ItemSet& items) const;
+
 
 	TrDB(void);
 	virtual ~TrDB(void);

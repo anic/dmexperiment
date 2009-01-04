@@ -538,3 +538,13 @@ ClassLabel TrDB::getClass(ClassLabel alias)const
 	
 	return (*m_pClassRemap)[alias];
 }
+
+int TrDB::getSupport(const ItemSet& items,ClassLabel label) const
+{
+	return 0;
+}
+
+int TrDB::getSupport(const ItemSet& items) const
+{
+	return 0;
+}
