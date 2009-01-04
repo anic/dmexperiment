@@ -78,6 +78,8 @@ protected:
 
 	std::vector<int>* m_pClassRemap;
 
+
+
 public:
 
 	ClassLabel getClass(ClassLabel alias)const;
@@ -156,6 +158,9 @@ public:
 	void createConditionalDB(const TrDB& parent,Item prefix,int nMinSupport,bool removeEmptyTrans = false);
 
 	void removeItem(Item item);
+
+	//删除同时具有items的项
+	void removeItem(const ItemSet& items);
 
 	//是否是源的数据库
 	bool isSource()const{ return m_bSource;}
