@@ -173,6 +173,7 @@ public:
 	//给定一个Item集合，不分类标签，获得对应的支持度
 	int getSupport(const ItemSet& items) const;
 
+	void clone(const TrDB& trdb);
 
 	TrDB(void);
 	virtual ~TrDB(void);
