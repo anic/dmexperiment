@@ -14,7 +14,7 @@ DDPMineAlgorithm::~DDPMineAlgorithm(void)
 bool DDPMineAlgorithm::execute(const TrDB& trdb,int nSupport)
 {
 	//算法结果放在m_result中
-	trdb_local = trdb;
+	trdb_local = TrDB(trdb);
 	prefix = ItemSet();
 	DDPMine(trdb_local, nSupport);
 	return true;
@@ -29,8 +29,10 @@ void DDPMineAlgorithm::DDPMine(TrDB& trdb, int min_sup)
 	branch_and_bound(trdb, min_sup, pre);
 	update_tree(trdb);
     //add prefix to m_result
-	m_result
-	//clear the prefix
+	Rule r;
+	r.body = prefix;
+	m_result.push_back(r);
+	prefix = ItemSet();
 	DDPMine(trdb, min_sup);
 }
 
@@ -46,8 +48,12 @@ void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const Ite
 
 
 	const std::set<ItemNode>& node = fptree.getHeader();
-	std::set<ItemNode>::const_iterator it; 
-	for (it = node.begin(); it != node.end(); ++it)
+	std::set<ItemNode>::const_iterator it;
+	//if (!prefix.empty())
+	//	it = node.find(ItemNode(*prefix.rbegin(),0));
+	//else
+		it = node.begin(); 
+	for (; it != node.end(); ++it)
 	{
 		/*std::vector<ItemSet_Support> out;
 		fptree.getPotentialPrefix(it->getId(), out);
@@ -60,6 +66,8 @@ void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const Ite
 		conbest.insert(it->getId());
 
 		double IG = computeIG(trdb_local, conbest);
+
+		
 			
 		if ( IG > maxIG )
 		{
@@ -121,7 +129,7 @@ double DDPMineAlgorithm::computeIG(const TrDB &trdb, ItemSet &iset)
 void DDPMineAlgorithm::update_tree(TrDB &trdb)
 {
 	std::set<Item>::iterator it; 
-	
+	trdb.removeItem(prefix);
 }
 
 double DDPMineAlgorithm::computeIGup(const TrDB &trdb, ItemSet &iset)

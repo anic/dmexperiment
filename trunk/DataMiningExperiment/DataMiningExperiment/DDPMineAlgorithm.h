@@ -16,7 +16,7 @@ private:
 	void DDPMine(TrDB& trdb, int min_sup);
     void branch_and_bound(const TrDB& trdb, int min_sup, const std::set<Item>& a);
 	double computeIG(const TrDB& trdb, ItemSet& iset);
-	void update_tree(TrDB& trdb, const ItemSet& iset);
+	void update_tree(TrDB& trdb);
 	bool getElement(const TrDB& trdb, ItemSet &current);
 	double computeIGup(const TrDB& trdb, ItemSet& iset);
 public:
