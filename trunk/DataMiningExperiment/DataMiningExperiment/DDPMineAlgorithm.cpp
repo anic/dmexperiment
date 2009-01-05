@@ -31,6 +31,8 @@ void DDPMineAlgorithm::DDPMine(TrDB& trdb, int min_sup)
 	if (trdb_local_entropy == 0)
 		return;
 
+	maxIG = 0;
+
 	branch_and_bound(trdb, min_sup, pre);
 	update_tree(trdb);
     //add prefix to m_result
@@ -58,13 +60,7 @@ void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const Ite
 
 	const std::set<ItemNode>& node = fptree.getHeader();
 	std::set<ItemNode>::const_iterator it;
-	//if (!a.empty())
-	//{
-	//	it = node.find(ItemNode(*a.rbegin(),0));
-	//	if(it == node.end())
-	//		it = node.begin();
-	//}
-	//else 
+
 	it = node.begin();
 	for (; it != node.end(); ++it)
 	{
@@ -106,7 +102,9 @@ double DDPMineAlgorithm::computeIG(const TrDB &trdb, ItemSet &iset)
 	int support_p = trdb.getSupport(iset, 1);
 	int support_iset = trdb.getSupport(iset);
 
-	double probility = support_p * 1.0 / support_iset;
+	double probility = 0;
+	if(support_iset != 0)
+		probility = support_p * 1.0 / support_iset;
 	double conditional_entropy_1 = 0;
 	if (probility != 1 && probility != 0)
 		conditional_entropy_1 = (support_iset * 1.0 / trdb_local_size) * ( -(probility) * log(probility) / log(2.0) - (1 - probility) * log(1 - probility) / log(2.0));
@@ -114,7 +112,10 @@ double DDPMineAlgorithm::computeIG(const TrDB &trdb, ItemSet &iset)
 
 	int support_notp = p - support_p;
 	int support_not_iset = trdb_local_size - support_iset;
-	probility = support_notp*1.0 / support_not_iset;
+
+	probility = 0;
+	if(support_not_iset != 0)
+		probility = support_notp*1.0 / support_not_iset;
 	double conditional_entropy_2 = 0;
 	if (probility != 1 && probility != 0)
 		conditional_entropy_2 = (support_not_iset * 1.0 / trdb_local_size) * ( -(probility) * log(probility) / log(2.0) - (1 - probility)*log(1 - probility) / log(2.0));
