@@ -45,11 +45,11 @@ void DDPMineAlgorithm::DDPMine(TrDB& trdb, int min_sup)
 
 void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const ItemSet& a)
 {
-	std::cout<<"branch_and_bound";
-	for(ItemSet::const_iterator iter = a.begin();
-		iter!=a.end();++iter)
-		std::cout<<*iter;
-	std::cout<<std::endl;
+	//std::cout<<"branch_and_bound";
+	//for(ItemSet::const_iterator iter = a.begin();
+	//	iter!=a.end();++iter)
+	//	std::cout<<*iter;
+	//std::cout<<std::endl;
 
 	FPTreeEx fptree;
 	fptree.createFromTrDB(trdb);
