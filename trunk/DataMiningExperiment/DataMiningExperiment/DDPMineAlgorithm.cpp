@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "DDPMineAlgorithm.h"
 #include <math.h>
-
+#include <iostream>
 
 DDPMineAlgorithm::DDPMineAlgorithm(void)
 {
@@ -43,6 +43,11 @@ void DDPMineAlgorithm::DDPMine(TrDB& trdb, int min_sup)
 
 void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const ItemSet& a)
 {
+	std::cout<<"branch_and_bound";
+	for(ItemSet::const_iterator iter = a.begin();
+		iter!=a.end();++iter)
+		std::cout<<*iter;
+	std::cout<<std::endl;
 
 	FPTreeEx fptree;
 	fptree.createFromTrDB(trdb);
@@ -53,12 +58,18 @@ void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const Ite
 
 	const std::set<ItemNode>& node = fptree.getHeader();
 	std::set<ItemNode>::const_iterator it;
-	if (!a.empty())
-		it = node.find(ItemNode(*a.rbegin(),0));
-	else 
-		it = node.begin();
+	//if (!a.empty())
+	//{
+	//	it = node.find(ItemNode(*a.rbegin(),0));
+	//	if(it == node.end())
+	//		it = node.begin();
+	//}
+	//else 
+	it = node.begin();
 	for (; it != node.end(); ++it)
 	{
+		if (!a.empty() && it->getId() < *a.rbegin())
+			continue;
 		/*std::vector<ItemSet_Support> out;
 		fptree.getPotentialPrefix(it->getId(), out);
 		std::vector<ItemSet_Support>::iterator vit;
