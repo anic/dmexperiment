@@ -23,13 +23,17 @@ using namespace std;
 
 void checkResult(const Result& result,const TrDB& trdb);
 void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,const char* fOutput,int writeLabel);
+void removeRedundancy(Result& result);
+
 
 /*
 dataset minsup k output
 dataset - 数据集
-minsup - 最小相对支持度
-k - 为每个实例最多挖掘的规则数目
+minsup - 最小相对支持度，0.1
+k - 为每个实例最多挖掘的规则数目，默认1，需要填写
 output - 输出的规则文件
+type - 1表示Harmony;其他表示DDP
+label - 0表示写0；1表示正常写；2表示不写；3表示1写成-1，其他写成1（2分用）
 */
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -37,20 +41,22 @@ int _tmain(int argc, _TCHAR* argv[])
 	//创建了数据库，作为测试，读取10行
 
 	int len = -1;
-	unsigned int minsup = 50;
+	double fsup = 0.1;
 
 	std::string filename,rulefile;
-	int type = 2;
+	int type = 2;			//1表示Harmony;其他表示DDP
+
 	int bWriteLabel = 2; //0表示默认写0，1 表示写标签，2表示不写，3表示1改成-1，2改成1
 	if (argc>=5)
 	{
 		filename = argv[1];
-		minsup = atoi(argv[2]);
+		
+		//相对支持度
+		fsup = atof(argv[2]);
+
 		rulefile = argv[4];
 		if (argc >=6 )
 			type = atoi(argv[5]);
-		else
-			type = 1;
 
 		if (argc >= 7)
 			bWriteLabel = atoi(argv[6]);
@@ -58,14 +64,13 @@ int _tmain(int argc, _TCHAR* argv[])
 	
 	/*测试代码*/
 	//minsup = 2;
-	//len = 10;
-	
-	
+	//len = 10;	
 	
 	DWORD start = GetTickCount();
 	TrDB trdb;
 	/*创建数据库*/
 	trdb.createFromFile(filename,len);
+	unsigned int minsup = (unsigned int)(fsup*trdb.getSize());
 	trdb.setMinSupport(minsup);
 	DWORD end = GetTickCount();
 
@@ -149,7 +154,12 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,con
 	{
 		DWORD end = GetTickCount();
 		std::cout<<"Algorithm executes "<<(end - start)<<"ms"<<std::endl;
-		const Result& result = algorithm.getResult();
+		Result& result = algorithm.getResult();
+
+		//不写标签的时候去除重复的
+		if (writeLabel == 2)
+			removeRedundancy(result);
+
 		//遍历结果
 		std::ofstream ofs(fOutput);
 		for(Result::const_iterator iter = result.begin();
@@ -169,7 +179,7 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,con
 				else
 					ofs<<"1 ";
 			} 
-			else
+			else if (writeLabel == 2)
 			{
 				//不写
 			}
@@ -178,8 +188,14 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,con
 			for(ItemSet::const_iterator ibody = iter->body.begin();
 				ibody !=iter->body.end();
 				++ibody)
-				ofs<<*ibody<<":1 ";
-
+				
+			{
+				ofs<<*ibody;
+				if (writeLabel == 2)
+					ofs<<" ";
+				else
+					ofs<<":1 ";
+			}
 			ofs<<"\r\n";
 
 		}
@@ -187,3 +203,35 @@ void output(DMAlgorithm& algorithm,const TrDB& trdb,unsigned int nMinSupport,con
 		ofs.close();
 	} 
 }
+
+void removeRedundancy(Result& result)
+{
+	for(Result::iterator iter = result.begin();
+		iter!=result.end();++iter)
+	{
+		if (iter->id != -1) //需要写
+		{
+			for(Result::iterator iter2 = iter + 1;iter2!=result.end();++iter2) //从下一个开始
+			{
+				if (iter2->id != -1 && iter2->body.size() == iter->body.size()) //可能出现重
+				{
+					ItemSet::const_iterator itemIter = iter->body.begin();
+					ItemSet::const_iterator itemIter2 = iter2->body.begin();
+					bool same = true;
+					for(;itemIter!=iter->body.end();++itemIter,++itemIter2)
+					{
+						if (*itemIter != *itemIter2)
+						{
+							same = false;
+							break;
+						}
+					}
+					if (same)
+						iter2->id = -1; //表示不写这个了，不区分类标签
+				}
+				
+			}
+		}
+	}
+}
+
