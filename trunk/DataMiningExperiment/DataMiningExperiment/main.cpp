@@ -40,7 +40,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	//创建了数据库，作为测试，读取10行
 
-	int len = -1;
+	int len = 2000;
 	double fsup = 0.1;
 
 	std::string filename,rulefile;
