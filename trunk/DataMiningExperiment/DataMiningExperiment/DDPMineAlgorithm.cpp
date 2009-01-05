@@ -53,10 +53,10 @@ void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const Ite
 
 	const std::set<ItemNode>& node = fptree.getHeader();
 	std::set<ItemNode>::const_iterator it;
-	//if (!prefix.empty())
-	//	it = node.find(ItemNode(*prefix.rbegin(),0));
-	//else
-		it = node.begin(); 
+	if (!a.empty())
+		it = node.find(ItemNode(*a.rbegin(),0));
+	else 
+		it = node.begin();
 	for (; it != node.end(); ++it)
 	{
 		/*std::vector<ItemSet_Support> out;
