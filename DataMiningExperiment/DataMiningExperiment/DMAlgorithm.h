@@ -36,5 +36,5 @@ public:
 	 * \returns
 	 * Ëã·¨½á¹û
 	 */
-	const Result& getResult()const {return m_result;}
+	Result& getResult(){return m_result;}
 };
