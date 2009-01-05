@@ -24,8 +24,13 @@ void DDPMineAlgorithm::DDPMine(TrDB& trdb, int min_sup)
 {
 	const ItemSet pre = ItemSet();//start prefix
 	//the process
-	if (trdb.getSize() == 0)
+	trdb_local_size = trdb.getSize();
+	if (trdb_local_size == 0)
 		return;
+	trdb_local_entropy = computeEntropy();
+	if (trdb_local_entropy == 0)
+		return;
+
 	branch_and_bound(trdb, min_sup, pre);
 	update_tree(trdb);
     //add prefix to m_result
@@ -39,7 +44,6 @@ void DDPMineAlgorithm::DDPMine(TrDB& trdb, int min_sup)
 void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const ItemSet& a)
 {
 
-	//从投影数据库构造fptree，记住是使用带有ex后缀这个
 	FPTreeEx fptree;
 	fptree.createFromTrDB(trdb);
 
@@ -65,10 +69,7 @@ void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const Ite
 		conbest.insert(a.begin(),a.end());
 		conbest.insert(it->getId());
 
-		double IG = computeIG(trdb_local, conbest);
-
-		
-			
+		double IG = computeIG(trdb_local, conbest);		
 		if ( IG > maxIG )
 		{
 			maxIG = IG;
@@ -88,42 +89,27 @@ void DDPMineAlgorithm::branch_and_bound(const TrDB& trdb, int min_sup, const Ite
 double DDPMineAlgorithm::computeIG(const TrDB &trdb, ItemSet &iset)
 {
 
-	int trdb_size = trdb.getSize();
+	double p = trdb.getSupport(1);
 
-	int p = 0;
-	const ClassMap& classmap = trdb.getClassTable();
-	for(ClassMap::const_iterator iter = classmap.begin();iter!=classmap.end();++iter)
-	{
-		if (iter->first == 1)
-		{
-			p += iter->second->size();
-		}
-	}
-
-	//compute the entroy: need the class label
-	double probility = p * 1.0 / trdb_size;
-	double entropy = 0;
-	if (probility != 1 && probility != 0)
-		entropy = -probility * (log(probility)/log(2.0)) - (1 - probility) * (log(1-probility)/log(2.0));
 	//compute conditional entroy
 	int support_p = trdb.getSupport(iset, 1);
 	int support_iset = trdb.getSupport(iset);
 
-	probility = support_p * 1.0 / support_iset;
+	double probility = support_p * 1.0 / support_iset;
 	double conditional_entropy_1 = 0;
 	if (probility != 1 && probility != 0)
-		conditional_entropy_1 = (support_iset * 1.0 / trdb_size) * ( -(probility) * log(probility) / log(2.0) - (1 - probility) * log(1 - probility) / log(2.0));
+		conditional_entropy_1 = (support_iset * 1.0 / trdb_local_size) * ( -(probility) * log(probility) / log(2.0) - (1 - probility) * log(1 - probility) / log(2.0));
 
 
 	int support_notp = p - support_p;
-	int support_not_iset = trdb_size - support_iset;
+	int support_not_iset = trdb_local_size - support_iset;
 	probility = support_notp*1.0 / support_not_iset;
 	double conditional_entropy_2 = 0;
 	if (probility != 1 && probility != 0)
-		conditional_entropy_2 = (support_not_iset * 1.0 / trdb_size) * ( -(probility) * log(probility) / log(2.0) - (1 - probility)*log(1 - probility) / log(2.0));
+		conditional_entropy_2 = (support_not_iset * 1.0 / trdb_local_size) * ( -(probility) * log(probility) / log(2.0) - (1 - probility)*log(1 - probility) / log(2.0));
 
 	//entroy - conditional entroy
-	return (entropy - conditional_entropy_1 - conditional_entropy_2);
+	return (trdb_local_entropy - conditional_entropy_1 - conditional_entropy_2);
 }
 
 void DDPMineAlgorithm::update_tree(TrDB &trdb)
@@ -134,25 +120,10 @@ void DDPMineAlgorithm::update_tree(TrDB &trdb)
 
 double DDPMineAlgorithm::computeIGup(const TrDB &trdb, ItemSet &iset)
 {
-	int trdb_size = trdb.getSize();
-	double p = 0;
-	const ClassMap& classmap = trdb.getClassTable();
-	for(ClassMap::const_iterator iter = classmap.begin();iter!=classmap.end();++iter)
-	{
-		if (iter->first == 1)
-		{
-			p += iter->second->size();
-		}
-	}
-
-	double probility = p * 1.0 / trdb_size;
-	double entropy = 0;
-	if (probility != 1 && probility != 0)
-		entropy = -probility * (log(probility)/log(2.0)) - (1 - probility) * (log(1-probility)/log(2.0));
-
-	p = p / trdb_size;
+	double p = trdb.getSupport(1); 
+	p = p / trdb_local_size;
 	double thita = trdb.getSupport(iset);
-	thita = thita / trdb_size;
+	thita = thita / trdb_local_size;
 	
 
 	double lb = 0;
@@ -161,6 +132,17 @@ double DDPMineAlgorithm::computeIGup(const TrDB &trdb, ItemSet &iset)
 	else if (thita > p && p != 0 && thita != 0)
 		lb = -p * log(p/thita) / log(2.0) - (thita - p) * log(1-p/thita) / log(2.0);
 
-	return entropy - lb;
+	return trdb_local_entropy - lb;
+}
+
+double DDPMineAlgorithm::computeEntropy()
+{
+	double p = trdb_local.getSupport(1); 
+	double probility = p * 1.0 / trdb_local_size;
+	double entropy = 0;
+	if (probility != 1 && probility != 0)
+		entropy = -probility * (log(probility)/log(2.0)) - (1 - probility) * (log(1-probility)/log(2.0));
+
+	return entropy;
 }
 
