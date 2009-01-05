@@ -35,8 +35,10 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 
 	//创建了数据库，作为测试，读取10行
-	int len = 1000;
+
+	int len = 2000;
 	unsigned int minsup = 200;
+
 	std::string filename,rulefile;
 	int type = 2;
 	int bWriteLabel = 2; //0表示默认写0，1 表示写标签，2表示不写，3表示1改成-1，2改成1
